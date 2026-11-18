@@ -1,0 +1,2728 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ExpiryGuard | Inventory Management</title>
+
+    <style>
+        :root {
+            --green: #176b45;
+            --green-dark: #104b31;
+            --green-light: #e7f4eb;
+            --bg: #f4f6f4;
+            --white: #fff;
+            --text: #24352b;
+            --muted: #7a857d;
+            --border: #e4e9e4;
+            --red: #d94b57;
+            --orange: #e99a30;
+            --blue: #397cc4;
+            --sidebar-width: 235px;
+            --shadow: 0 3px 14px rgba(30, 60, 40, .055);
+        }
+
+        * { box-sizing: border-box; }
+
+        /* Shared utility used by view switching, filters, empty states and panels. */
+        .hidden { display: none !important; }
+
+        body {
+            margin: 0;
+            color: var(--text);
+            background: var(--bg);
+            font-family: Inter, "Segoe UI", Arial, sans-serif;
+            font-size: 14px;
+        }
+
+        button, input, select { font: inherit; }
+        a { color: inherit; text-decoration: none; }
+
+        .app {
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            position: fixed;
+            inset: 0 auto 0 0;
+            z-index: 100;
+            width: var(--sidebar-width);
+            padding: 24px 15px;
+            background: var(--white);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            transition: transform .22s ease;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 8px 27px;
+        }
+
+        .brand-logo {
+            width: 42px;
+            height: 42px;
+            display: grid;
+            place-items: center;
+            background: var(--green-light);
+            border-radius: 12px;
+            font-size: 24px;
+        }
+
+        .brand-name {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--green);
+            letter-spacing: -.6px;
+        }
+
+        .brand-caption {
+            color: var(--muted);
+            font-size: 10px;
+            margin-top: 3px;
+        }
+
+        .nav-label {
+            margin: 15px 10px 9px;
+            font-size: 10px;
+            letter-spacing: 1.1px;
+            font-weight: 800;
+            color: #9aa39c;
+            text-transform: uppercase;
+        }
+
+        .nav-link {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 13px;
+            margin: 3px 0;
+            border-radius: 9px;
+            color: #68746b;
+            font-size: 13px;
+            font-weight: 600;
+            transition: background .15s, color .15s;
+        }
+
+        .nav-link:hover {
+            background: #f3f7f3;
+            color: var(--green);
+        }
+
+        .nav-link.active {
+            color: white;
+            background: var(--green);
+            box-shadow: 0 4px 10px #176b4522;
+        }
+
+        .nav-icon {
+            width: 19px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        .sidebar-bottom {
+            margin-top: auto;
+            padding: 17px 8px 0;
+        }
+
+        .sidebar-note {
+            padding: 14px;
+            border-radius: 12px;
+            background: #f2f7f2;
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .sidebar-note strong {
+            display: block;
+            color: var(--green);
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .main {
+            min-height: 100vh;
+            margin-left: var(--sidebar-width);
+        }
+
+        .topbar {
+            height: 76px;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            padding: 0 30px;
+            background: rgba(255,255,255,.96);
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(12px);
+        }
+
+        .topbar-left, .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+        }
+
+        .page-heading {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 750;
+        }
+
+        .top-search {
+            width: min(270px, 27vw);
+            padding: 10px 13px;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            background: #fafbfa;
+            outline: none;
+            font-size: 12px;
+        }
+
+        .top-search:focus {
+            border-color: #83b899;
+        }
+
+        .icon-button {
+            width: 36px;
+            height: 36px;
+            display: grid;
+            place-items: center;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .profile {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding-left: 8px;
+        }
+
+        .avatar {
+            width: 34px;
+            height: 34px;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            color: var(--green);
+            background: var(--green-light);
+            font-weight: 800;
+        }
+
+        .profile-name {
+            font-size: 12px;
+            font-weight: 750;
+        }
+
+        .profile-role {
+            color: var(--muted);
+            font-size: 10px;
+            margin-top: 3px;
+        }
+
+        .menu-button { display: none; }
+
+        .content {
+            width: 100%;
+            max-width: 1650px;
+            margin: 0 auto;
+            padding: 27px 30px 40px;
+        }
+
+        .view { display: none; }
+        .view.active { display: block; }
+
+        .view-intro {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 23px;
+        }
+
+        .view-intro h2 {
+            margin: 0;
+            font-size: 23px;
+            letter-spacing: -.5px;
+        }
+
+        .view-intro p {
+            margin: 7px 0 0;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            padding: 10px 13px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+            transition: .15s;
+        }
+
+        .button:hover { filter: brightness(.96); }
+        .button:disabled { opacity: .45; cursor: not-allowed; }
+
+        .button-primary {
+            color: white;
+            background: var(--green);
+        }
+
+        .button-light {
+            color: var(--green);
+            background: var(--green-light);
+            border-color: #d6eadd;
+        }
+
+        .button-outline {
+            color: var(--text);
+            background: white;
+            border-color: var(--border);
+        }
+
+        .button-danger {
+            color: white;
+            background: var(--red);
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            min-width: 0;
+            padding: 18px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 13px;
+            box-shadow: var(--shadow);
+        }
+
+        .global-card-strip {
+            margin: 0 0 20px;
+        }
+        .view-back-button {
+            margin-left: auto;
+            flex-shrink: 0;
+            align-self: flex-start;
+        }
+        .view-intro > .view-back-button {
+            margin-left: auto;
+        }
+        @media (max-width: 700px) {
+            .view-intro { flex-wrap: wrap; }
+            .view-back-button { margin-left: 0; }
+        }
+
+        .stat-card.is-clickable {
+            cursor: pointer;
+            transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+        }
+        .stat-card.is-clickable:hover,
+        .stat-card.is-clickable:focus-visible {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 22px rgba(30, 60, 40, .12);
+            border-color: #9fcab0;
+            outline: none;
+        }
+        .stat-card.is-clickable .stat-foot::after {
+            content: "  ·  View details →";
+            color: var(--green);
+            font-weight: 700;
+        }
+
+        .stat-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-label {
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 650;
+        }
+
+        .stat-icon {
+            width: 34px;
+            height: 34px;
+            display: grid;
+            place-items: center;
+            border-radius: 10px;
+            background: var(--green-light);
+            font-size: 17px;
+        }
+
+        .stat-number {
+            display: block;
+            margin-top: 14px;
+            font-size: 27px;
+            font-weight: 800;
+            letter-spacing: -.5px;
+            overflow-wrap: anywhere;
+        }
+
+        .stat-foot {
+            margin-top: 6px;
+            color: var(--muted);
+            font-size: 10px;
+        }
+
+        .stat-card.warning .stat-icon { background: #fff2d8; }
+        .stat-card.urgent .stat-icon { background: #ffeadc; }
+        .stat-card.danger .stat-icon { background: #ffe8eb; }
+        .stat-card.blue .stat-icon { background: #e8f0ff; }
+
+        .grid-main {
+            display: grid;
+            grid-template-columns: minmax(0, 1.45fr) minmax(270px, .85fr);
+            gap: 17px;
+            align-items: start;
+        }
+
+        .grid-equal {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 17px;
+            align-items: start;
+        }
+
+        .panel {
+            min-width: 0;
+            margin-bottom: 17px;
+            padding: 19px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 13px;
+            box-shadow: var(--shadow);
+        }
+
+        .panel-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 5px;
+        }
+
+        .panel-heading h3 {
+            margin: 0;
+            font-size: 14px;
+        }
+
+        .panel-description {
+            margin: 7px 0 17px;
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .chart {
+            height: 235px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            gap: 12px;
+            padding: 14px 5px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .chart-item {
+            height: 100%;
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .chart-value {
+            font-size: 11px;
+            font-weight: 750;
+        }
+
+        .chart-bar {
+            width: min(39px, 85%);
+            min-height: 3px;
+            border-radius: 5px 5px 1px 1px;
+        }
+
+        .chart-label {
+            color: var(--muted);
+            font-size: 10px;
+            padding-bottom: 9px;
+        }
+
+        .bar-safe { background: #2f9b65; }
+        .bar-warning { background: #e6b13f; }
+        .bar-urgent { background: #ec873e; }
+        .bar-expired { background: #d94b57; }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-top: 14px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--muted);
+            font-size: 10px;
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 3px;
+        }
+
+        .mini-list {
+            display: grid;
+            gap: 0;
+        }
+
+        .mini-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 13px 0;
+            border-bottom: 1px solid #edf0ed;
+        }
+
+        .mini-row:last-child { border-bottom: 0; }
+
+        .mini-info {
+            min-width: 0;
+        }
+
+        .mini-title {
+            font-size: 12px;
+            font-weight: 750;
+            overflow-wrap: anywhere;
+        }
+
+        .mini-sub {
+            margin-top: 5px;
+            color: var(--muted);
+            font-size: 10px;
+            line-height: 1.5;
+        }
+
+        .mini-number {
+            white-space: nowrap;
+            font-size: 12px;
+            font-weight: 750;
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 5px 8px;
+            border-radius: 20px;
+            background: #eef2ee;
+            color: #56645a;
+            font-size: 10px;
+            font-weight: 750;
+            white-space: nowrap;
+        }
+
+        .pill.safe, .pill.success {
+            color: #176b45;
+            background: #e5f5eb;
+        }
+
+        .pill.warning {
+            color: #82590c;
+            background: #fff3d7;
+        }
+
+        .pill.urgent {
+            color: #98480d;
+            background: #ffeadb;
+        }
+
+        .pill.critical, .pill.expired {
+            color: #a32634;
+            background: #ffe8eb;
+        }
+
+        .pill.info {
+            color: #245c99;
+            background: #e7f0ff;
+        }
+
+        .recommendation {
+            padding: 14px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border);
+            border-left: 4px solid #93a39a;
+            border-radius: 9px;
+        }
+
+        .recommendation:last-child { margin-bottom: 0; }
+        .recommendation.critical { border-left-color: var(--red); }
+        .recommendation.urgent { border-left-color: #e78337; }
+        .recommendation.warning { border-left-color: var(--orange); }
+        .recommendation.info { border-left-color: var(--blue); }
+
+        .recommendation h4 {
+            margin: 0;
+            font-size: 12px;
+        }
+
+        .recommendation p {
+            margin: 8px 0 0;
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .recommendation .product {
+            margin-top: 6px;
+            color: var(--green);
+            font-weight: 750;
+            font-size: 11px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            min-width: 0;
+        }
+
+        .field label {
+            font-size: 11px;
+            font-weight: 750;
+        }
+
+        .field input, .field select, .control {
+            width: 100%;
+            min-width: 0;
+            padding: 10px 11px;
+            border: 1px solid #dfe6df;
+            border-radius: 8px;
+            background: white;
+            color: var(--text);
+            outline: none;
+            font-size: 12px;
+        }
+
+        .field input:focus, .field select:focus, .control:focus {
+            border-color: #80b496;
+            box-shadow: 0 0 0 3px #176b4512;
+        }
+
+        .form-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .help-text {
+            color: var(--muted);
+            font-size: 10px;
+            line-height: 1.5;
+        }
+
+        .toolbar {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 9px;
+            margin-bottom: 15px;
+        }
+
+        .table-wrap {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+        }
+
+        table {
+            width: 100%;
+            min-width: 930px;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+
+        thead { background: #f5f8f5; }
+
+        th, td {
+            padding: 12px 11px;
+            text-align: left;
+            vertical-align: middle;
+            border-bottom: 1px solid #edf1ed;
+        }
+
+        th {
+            color: #68746a;
+            font-size: 10px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        tbody tr:last-child td { border-bottom: 0; }
+        tbody tr:hover { background: #fbfdfb; }
+
+        .product-name {
+            font-weight: 750;
+            font-size: 11px;
+        }
+
+        .product-category {
+            margin-top: 4px;
+            color: var(--muted);
+            font-size: 10px;
+        }
+
+        .actions {
+            display: grid;
+            gap: 7px;
+            min-width: 180px;
+        }
+
+        .inline-form {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .inline-form input, .inline-form select {
+            min-width: 0;
+            width: 75px;
+            padding: 7px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 10px;
+        }
+
+        .inline-form select { width: 95px; }
+
+        .inline-form .button {
+            padding: 7px 9px;
+            font-size: 10px;
+        }
+
+        .empty-state {
+            padding: 25px 10px;
+            text-align: center;
+            color: var(--muted);
+            line-height: 1.6;
+            font-size: 12px;
+        }
+
+        .empty-state strong {
+            display: block;
+            color: var(--text);
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+
+        .risk-value {
+            margin: 15px 0;
+            color: var(--green);
+            font-size: 30px;
+            font-weight: 800;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 8px;
+            overflow: hidden;
+            background: #edf1ed;
+            border-radius: 20px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            border-radius: inherit;
+            background: var(--green);
+        }
+
+        .flash-list {
+            display: grid;
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+
+        .flash {
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: white;
+            font-size: 12px;
+        }
+
+        .flash.success {
+            color: #176b45;
+            background: #eaf7ee;
+        }
+
+        .flash.warning {
+            color: #82590c;
+            background: #fff7e6;
+        }
+
+        .flash.error {
+            color: #a32634;
+            background: #fff0f2;
+        }
+
+        .page-footer {
+            padding: 20px 0 0;
+            text-align: center;
+            color: #99a29b;
+            font-size: 10px;
+        }
+
+        .mobile-overlay { display: none; }
+
+        @media (max-width: 1200px) {
+            .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .grid-main { grid-template-columns: minmax(0, 1.2fr) minmax(240px, .8fr); }
+            .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .content { padding-left: 22px; padding-right: 22px; }
+            .topbar { padding: 0 22px; }
+        }
+
+        @media (max-width: 850px) {
+            :root { --sidebar-width: 235px; }
+
+            .sidebar {
+                transform: translateX(-105%);
+                box-shadow: var(--shadow);
+            }
+
+            .sidebar.open { transform: translateX(0); }
+
+            .mobile-overlay.open {
+                display: block;
+                position: fixed;
+                inset: 0;
+                z-index: 90;
+                background: #15231b66;
+            }
+
+            .main { margin-left: 0; }
+            .menu-button { display: grid; }
+            .grid-main, .grid-equal { grid-template-columns: 1fr; }
+            .top-search { width: min(230px, 35vw); }
+        }
+
+        @media (max-width: 560px) {
+            .topbar { height: 65px; padding: 0 13px; }
+            .content { padding: 20px 13px 30px; }
+            .top-search { display: none; }
+            .profile-name, .profile-role { display: none; }
+            .page-heading { font-size: 17px; }
+            .view-intro h2 { font-size: 21px; }
+            .cards { gap: 9px; }
+            .stat-card { padding: 13px; }
+            .stat-number { font-size: 23px; }
+            .stat-label { font-size: 10px; }
+            .stat-icon { width: 29px; height: 29px; font-size: 14px; }
+            .panel { padding: 14px; }
+            .form-grid { grid-template-columns: 1fr; }
+            .toolbar { grid-template-columns: 1fr 1fr; }
+            .toolbar .search-control { grid-column: 1 / -1; }
+            .view-intro { align-items: flex-start; }
+            .view-intro > .button { padding: 9px; }
+        }
+    
+
+        /* EXPIRYGUARD READABILITY: larger dashboard typography */
+        body { font-size: 16px !important; line-height: 1.6; }
+        .brand-name { font-size: 23px !important; }
+        .brand-caption { font-size: 13px !important; }
+        .nav-label { font-size: 12px !important; }
+        .nav-link { font-size: 15px !important; }
+        .sidebar-note { font-size: 13px !important; }
+        .sidebar-note strong { font-size: 14px !important; }
+        .page-heading { font-size: 25px !important; }
+        .top-search { font-size: 15px !important; }
+        .profile-name { font-size: 15px !important; }
+        .profile-role { font-size: 13px !important; }
+        .view-intro h2 { font-size: 28px !important; }
+        .view-intro p { font-size: 15px !important; }
+        .button { font-size: 15px !important; }
+        .stat-label { font-size: 14px !important; }
+        .stat-number { font-size: 34px !important; }
+        .stat-foot { font-size: 13px !important; }
+        .panel-heading h3 { font-size: 19px !important; }
+        .panel-description { font-size: 14px !important; }
+        .chart-value { font-size: 14px !important; }
+        .chart-label { font-size: 13px !important; }
+        .legend-item { font-size: 13px !important; }
+        .mini-title { font-size: 15px !important; }
+        .mini-sub { font-size: 13px !important; }
+        .mini-number { font-size: 15px !important; }
+        .pill { font-size: 13px !important; }
+        .recommendation h4 { font-size: 16px !important; }
+        .recommendation p, .recommendation .product { font-size: 14px !important; }
+        .field label { font-size: 15px !important; }
+        .field input, .field select, .control { font-size: 15px !important; }
+        .help-text { font-size: 13px !important; }
+        table { font-size: 14px !important; }
+        th { font-size: 13px !important; }
+        td { font-size: 14px !important; }
+        .product-name { font-size: 14px !important; }
+        .product-category { font-size: 13px !important; }
+        .inline-form input, .inline-form select { font-size: 13px !important; }
+        .inline-form .button { font-size: 13px !important; }
+        .empty-state { font-size: 14px !important; }
+        .empty-state strong { font-size: 16px !important; }
+        .risk-value { font-size: 36px !important; }
+        .flash { font-size: 14px !important; }
+        .page-footer { font-size: 13px !important; }
+        input, select, textarea, button { font-size: inherit; }
+
+        @media (max-width: 560px) {
+            body { font-size: 15px !important; }
+            .page-heading { font-size: 21px !important; }
+            .view-intro h2 { font-size: 24px !important; }
+            .view-intro p, .panel-description { font-size: 14px !important; }
+            .stat-number { font-size: 30px !important; }
+            .nav-link { font-size: 15px !important; }
+            th { font-size: 12px !important; }
+            td { font-size: 13px !important; }
+        }
+</style>
+</head>
+
+<body>
+<div class="app">
+
+    <aside class="sidebar" id="sidebar">
+        <a href="#dashboard" class="brand" aria-label="ExpiryGuard dashboard">
+            <div class="brand-logo">🌿</div>
+            <div>
+                <div class="brand-name">ExpiryGuard</div>
+                <div class="brand-caption">SMART INVENTORY SYSTEM</div>
+            </div>
+        </a>
+
+        <div class="nav-label">Workspace</div>
+
+        <a class="nav-link" href="#dashboard" data-view="dashboard">
+            <span class="nav-icon">⌂</span> Dashboard
+        </a>
+        <a class="nav-link" href="#inventory" data-view="inventory">
+            <span class="nav-icon">▤</span> Inventory
+        </a>
+        <a class="nav-link" href="#products" data-view="products">
+            <span class="nav-icon">▦</span> Products
+        </a>
+        <a class="nav-link" href="#sales" data-view="sales">
+            <span class="nav-icon">↗</span> Sales
+        </a>
+        <a class="nav-link" href="#alerts" data-view="alerts">
+            <span class="nav-icon">♧</span> Alerts &amp; Notifications
+        </a>
+        {% if current_user.role in ['Admin', 'Manager'] %}
+        <a class="nav-link" href="{{ url_for('suppliers') }}"><span class="nav-icon">♧</span> Suppliers</a>
+        <a class="nav-link" href="{{ url_for('export_inventory_csv') }}"><span class="nav-icon">⇩</span> Export Inventory CSV</a>
+        <a class="nav-link" href="{{ url_for('export_inventory_xlsx') }}"><span class="nav-icon">▦</span> Export Inventory Excel</a>
+        <a class="nav-link" href="{{ url_for('export_audit_csv') }}"><span class="nav-icon">☷</span> Export Stock Audit</a>
+        {% endif %}
+        <a class="nav-link" href="{{ url_for('create_invoice') }}"><span class="nav-icon">▤</span> Create Invoice / Receipt</a>
+        {% if current_user.role in ['Admin', 'Manager'] %}
+        <a class="nav-link" href="#recommendations" data-view="recommendations">
+            <span class="nav-icon">✧</span> Smart Recommendations
+        </a>
+        <a class="nav-link" href="#reports" data-view="reports">
+            <span class="nav-icon">▥</span> Reports
+        </a>
+        {% endif %}
+
+        {% if current_user.role == 'Admin' %}
+        <div class="nav-label">Administration</div>
+        <a class="nav-link" href="#users" data-view="users">
+            <span class="nav-icon">♙</span> Users
+        </a>
+        {% endif %}
+
+        <div class="sidebar-bottom">
+            <div class="sidebar-note">
+                <strong>🌱 Reduce expiry waste</strong>
+                Monitor stock, prioritize products nearing expiry, and make better replenishment decisions.
+            </div>
+        </div>
+    </aside>
+
+    <div class="mobile-overlay" id="mobileOverlay"></div>
+
+    <main class="main">
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="icon-button menu-button" id="menuButton"
+                        type="button" aria-label="Open navigation">☰</button>
+                <h1 class="page-heading" id="pageHeading">Dashboard</h1>
+            </div>
+
+            <div class="topbar-right">
+                <input type="search" class="top-search" id="globalSearch"
+                       placeholder="Search inventory..." aria-label="Search inventory">
+                <span class="profile">
+                    <span class="avatar">E</span>
+                    <span>
+                        <span class="profile-name" style="display:block">ExpiryGuard</span>
+                        <span class="profile-role" style="display:block">Inventory workspace</span>
+                    </span>
+                </span>
+                <form method="POST" action="{{ url_for('logout') }}">
+    <button type="submit" class="button button-danger">
+        Logout
+    </button>
+</form>
+            </div>
+        </header>
+
+        <div class="content">
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-list" id="flashList">
+                        {% for category, message in messages %}
+                            <div class="flash {{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <!-- ==================================================
+                 DASHBOARD VIEW: OVERVIEW ONLY
+                 ================================================== -->
+            <section class="view" id="view-dashboard" data-title="Dashboard">
+                <div class="view-intro">
+                    <div>
+                        <h2>Good to see you 👋</h2>
+                        <p>Here's what's happening with your inventory today.</p>
+                    </div>
+                    <a class="button button-primary" href="#inventory"
+                       data-navigate="inventory">View Inventory →</a>
+                </div>
+
+                <div class="cards dashboard-summary-cards">
+                    <article class="stat-card is-clickable" role="link" tabindex="0"
+                             aria-label="View all batches" data-dashboard-action="inventory" data-inventory-filter="">
+                        <div class="stat-top"><span class="stat-label">Total Batches</span><span class="stat-icon">📦</span></div>
+                        <strong class="stat-number">{{ summary.total_batches }}</strong>
+                        <div class="stat-foot">Registered batches</div>
+                    </article>
+                    <article class="stat-card is-clickable" role="link" tabindex="0"
+                             aria-label="View current units by product" data-dashboard-action="products">
+                        <div class="stat-top"><span class="stat-label">Total Units</span><span class="stat-icon">▦</span></div>
+                        <strong class="stat-number">{{ summary.total_units }}</strong>
+                        <div class="stat-foot">Current stock quantity</div>
+                    </article>
+                    <article class="stat-card is-clickable" role="link" tabindex="0"
+                             aria-label="View safe batches" data-dashboard-action="inventory" data-inventory-filter="Safe">
+                        <div class="stat-top"><span class="stat-label">Safe</span><span class="stat-icon">✓</span></div>
+                        <strong class="stat-number">{{ summary.safe }}</strong>
+                        <div class="stat-foot">Within safe expiry period</div>
+                    </article>
+                    <article class="stat-card warning is-clickable" role="link" tabindex="0"
+                             aria-label="View warning batches" data-dashboard-action="inventory" data-inventory-filter="Warning">
+                        <div class="stat-top"><span class="stat-label">Warning</span><span class="stat-icon">◷</span></div>
+                        <strong class="stat-number">{{ summary.warning }}</strong>
+                        <div class="stat-foot">Expiring within 30 days</div>
+                    </article>
+                    <article class="stat-card urgent is-clickable" role="link" tabindex="0"
+                             aria-label="View urgent batches" data-dashboard-action="inventory" data-inventory-filter="Urgent">
+                        <div class="stat-top"><span class="stat-label">Urgent / Today</span><span class="stat-icon">⚠</span></div>
+                        <strong class="stat-number">{{ summary.urgent }}</strong>
+                        <div class="stat-foot">Expiry needs attention</div>
+                    </article>
+                    <article class="stat-card danger is-clickable" role="link" tabindex="0"
+                             aria-label="View expired batches" data-dashboard-action="inventory" data-inventory-filter="Expired">
+                        <div class="stat-top"><span class="stat-label">Expired Batches</span><span class="stat-icon">!</span></div>
+                        <strong class="stat-number">{{ summary.expired }}</strong>
+                        <div class="stat-foot">Review immediately</div>
+                    </article>
+                    {% if current_user.role in ['Admin', 'Manager'] %}
+                    <article class="stat-card danger is-clickable" role="link" tabindex="0"
+                             aria-label="View expiry risk recommendations" data-dashboard-action="potential-loss">
+                        <div class="stat-top"><span class="stat-label">Potential Loss</span><span class="stat-icon">₹</span></div>
+                        <strong class="stat-number">₹{{ "%.2f"|format(summary.potential_loss) }}</strong>
+                        <div class="stat-foot">Purchase value at expiry risk</div>
+                    </article>
+                    {% endif %}
+                    <article class="stat-card blue is-clickable" role="link" tabindex="0"
+                             aria-label="View sales information" data-dashboard-action="sales">
+                        <div class="stat-top"><span class="stat-label">Average Daily Sales</span><span class="stat-icon">↗</span></div>
+                        <strong class="stat-number">{{ summary.average_daily_sales }}</strong>
+                        <div class="stat-foot">Units per day · last 7 days</div>
+                    </article>
+                </div>
+
+                <div class="grid-main">
+                    <div>
+                        <article class="panel">
+                            <div class="panel-heading">
+                                <h3>Operational Overview</h3>
+                                <span class="pill">Current inventory</span>
+                            </div>
+                            <p class="panel-description">
+                                Batch distribution by expiry status.
+                            </p>
+
+                            {% set max_count = [
+                                summary.safe, summary.warning,
+                                summary.urgent, summary.expired, 1
+                            ] | max %}
+
+                            <div class="chart">
+                                {% for label, value, css in [
+                                    ('Safe', summary.safe, 'bar-safe'),
+                                    ('Warning', summary.warning, 'bar-warning'),
+                                    ('Urgent', summary.urgent, 'bar-urgent'),
+                                    ('Expired', summary.expired, 'bar-expired')
+                                ] %}
+                                    <div class="chart-item">
+                                        <span class="chart-value">{{ value }}</span>
+                                        <div class="chart-bar {{ css }}"
+                                             style="height:{{ [((value / max_count) * 150), 3] | max }}px"></div>
+                                        <span class="chart-label">{{ label }}</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="legend">
+                                <span class="legend-item"><i class="legend-dot bar-safe"></i> Safe</span>
+                                <span class="legend-item"><i class="legend-dot bar-warning"></i> Warning</span>
+                                <span class="legend-item"><i class="legend-dot bar-urgent"></i> Urgent</span>
+                                <span class="legend-item"><i class="legend-dot bar-expired"></i> Expired</span>
+                            </div>
+                        </article>
+
+                        <article class="panel">
+                            <div class="panel-heading">
+                                <h3>Important Alerts</h3>
+                                <span class="pill">{{ alert_count }} active</span>
+                                <a class="button button-light" href="#alerts"
+                                   data-navigate="alerts">View all →</a>
+                            </div>
+                            <p class="panel-description">
+                                Expiry, stock and sales signals generated from your existing inventory data.
+                            </p>
+
+                            {% if alerts %}
+                                <div class="mini-list">
+                                    {% for item in alerts[:5] %}
+                                        {% if item.target == 'recommendations' and current_user.role in ['Admin', 'Manager'] %}
+                                        <a class="mini-row" href="#recommendations" data-navigate="recommendations">
+                                        {% else %}
+                                        <a class="mini-row alert-open-inventory" href="#inventory" data-navigate="inventory" data-alert-search="{{ item.product|e }}">
+                                        {% endif %}
+                                            <div class="mini-info">
+                                                <div class="mini-title">{{ item.title }} · {{ item.product }}</div>
+                                                <div class="mini-sub">Batch {{ item.batch }} · {{ item.detail }}</div>
+                                            </div>
+                                            <span class="pill {{ 'critical' if item.severity == 'critical' else item.severity }}">{{ item.severity|upper }}</span>
+                                        </a>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="empty-state">
+                                    <strong>All clear 🌱</strong>
+                                    No expiry or stock alerts currently require attention.
+                                </div>
+                            {% endif %}
+                        </article>
+                    </div>
+
+                    <div>
+                        {% if current_user.role in ['Admin', 'Manager'] %}
+                        <article class="panel">
+                            <div class="panel-heading">
+                                <h3>Stock at Risk</h3>
+                                <span class="stat-icon">₹</span>
+                            </div>
+                            <p class="panel-description">
+                                Purchase value of urgent and expired inventory.
+                            </p>
+                            <a class="risk-value" href="#recommendations" data-dashboard-action="potential-loss"
+                               aria-label="Open recommendations for potential expiry loss">₹{{ "%.2f"|format(summary.potential_loss) }}</a>
+                            <p class="panel-description">
+                                Estimate based on current purchase prices. This is not a confirmed loss.
+                            </p>
+                            <div class="form-footer">
+                                <span class="pill critical">Expiry exposure</span>
+                                <a href="#reports" data-navigate="reports"
+                                   class="button button-light">View reports</a>
+                            </div>
+                        </article>
+
+                        {% endif %}
+                        <article class="panel">
+                            <div class="panel-heading">
+                                <h3>Recent Inventory</h3>
+                                <a class="button button-light" href="#inventory"
+                                   data-navigate="inventory">View all →</a>
+                            </div>
+                            <p class="panel-description">Your next batches by expiry date.</p>
+
+                            {% if batches %}
+                                <div class="mini-list">
+                                    {% for b in batches[:5] %}
+                                        <div class="mini-row">
+                                            <div class="mini-info">
+                                                <div class="mini-title">{{ b.product_name }}</div>
+                                                <div class="mini-sub">
+                                                    {{ b.quantity }} units · {{ b.expiry_date }}
+                                                </div>
+                                            </div>
+                                            <span class="pill {{ 'expired' if b.status == 'Expired' else ('urgent' if b.status in ['Urgent', 'Expires Today'] else ('warning' if b.status == 'Warning' else 'safe')) }}">
+                                                {{ b.status }}
+                                            </span>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="empty-state">
+                                    <strong>No inventory yet</strong>
+                                    Add a batch to start monitoring your stock.
+                                    <p><a href="#inventory" data-navigate="inventory">Open Inventory →</a></p>
+                                </div>
+                            {% endif %}
+                        </article>
+
+                        <article class="panel">
+                            <div class="panel-heading"><h3>Quick Actions</h3></div>
+                            <p class="panel-description">Jump straight to a task.</p>
+                            <div class="mini-list">
+                                <a class="mini-row" href="#inventory" data-navigate="inventory">
+                                    <span class="mini-title">＋ Manage inventory</span><span>→</span>
+                                </a>
+                                <a class="mini-row" href="#sales" data-navigate="sales">
+                                    <span class="mini-title">↗ Record a sale</span><span>→</span>
+                                </a>
+                                {% if current_user.role in ['Admin', 'Manager'] %}
+                                <a class="mini-row" href="#recommendations" data-navigate="recommendations">
+                                    <span class="mini-title">✧ Review recommendations</span><span>→</span>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================================================
+                 INVENTORY VIEW: ONE INVENTORY IMPLEMENTATION
+                 ================================================== -->
+            <section class="view" id="view-inventory" data-title="Inventory">
+                <div class="view-intro">
+                    <div>
+                        <h2>Inventory Management</h2>
+                        <p>Manage batches, quantities, prices, expiry dates and stock movements.</p>
+                    </div>
+                    <div class="view-actions">
+                        <a class="button button-light view-back-button" href="#dashboard" data-navigate="dashboard" data-back-dashboard>← Back to Dashboard</a>
+                        {% if current_user.role in ['Admin', 'Manager'] %}
+                        <button class="button button-primary" type="button"
+                            id="toggleAddBatch">＋ Add Batch</button>
+                        {% endif %}
+                    </div>
+                </div>
+
+<div class="cards">
+                    <article class="stat-card">
+                        <div class="stat-top"><span class="stat-label">Total Batches</span><span class="stat-icon">📦</span></div>
+                        <strong class="stat-number">{{ summary.total_batches }}</strong>
+                        <div class="stat-foot">Registered batches</div>
+                    </article>
+                    <article class="stat-card">
+                        <div class="stat-top"><span class="stat-label">Total Units</span><span class="stat-icon">▦</span></div>
+                        <strong class="stat-number">{{ summary.total_units }}</strong>
+                        <div class="stat-foot">Current stock quantity</div>
+                    </article>
+                    <article class="stat-card warning">
+                        <div class="stat-top"><span class="stat-label">Warning</span><span class="stat-icon">◷</span></div>
+                        <strong class="stat-number">{{ summary.warning }}</strong>
+                        <div class="stat-foot">Expiring within 30 days</div>
+                    </article>
+                    <article class="stat-card danger">
+                        <div class="stat-top"><span class="stat-label">Expired</span><span class="stat-icon">!</span></div>
+                        <strong class="stat-number">{{ summary.expired }}</strong>
+                        <div class="stat-foot">Must not be sold</div>
+                    </article>
+                </div>
+
+                {% if current_user.role in ['Admin', 'Manager'] %}
+                <article class="panel hidden" id="addBatchPanel">
+                    <div class="panel-heading"><h3>Add Inventory Batch</h3></div>
+                    <p class="panel-description">
+                        Enter batch details. Existing seven-day sales validation is applied by the server.
+                    </p>
+
+                    <form action="{{ url_for('add_batch') }}" method="POST">
+                        <div class="form-grid">
+                            <div class="field">
+                                <label for="product_name">Product Name *</label>
+                                <input id="product_name" name="product_name" list="productOptions"
+                                       required maxlength="150" placeholder="e.g. Milk Powder">
+                                <datalist id="productOptions">
+                                    {% for name in product_names %}<option value="{{ name }}">{% endfor %}
+                                </datalist>
+                            </div>
+                            <div class="field">
+                                <label for="category">Category *</label>
+                                <input id="category" name="category" required maxlength="100" placeholder="e.g. Dairy">
+                            </div>
+                            <div class="field">
+                                <label for="batch_number">Batch Number *</label>
+                                <input id="batch_number" name="batch_number" required maxlength="100" placeholder="BATCH-001">
+                            </div>
+                            <div class="field">
+                                <label for="barcode">Barcode</label>
+                                <input id="barcode" name="barcode" maxlength="100" placeholder="Scan or enter barcode">
+                            </div>
+                            <div class="field">
+                                <label for="quantity">Quantity *</label>
+                                <input id="quantity" name="quantity" type="number" min="1" step="1" required>
+                            </div>
+                            <div class="field">
+                                <label for="purchase_price">Purchase Price (₹) *</label>
+                                <input id="purchase_price" name="purchase_price" type="number" min="0" step="0.01" required>
+                            </div>
+                            <div class="field">
+                                <label for="selling_price">Selling Price (₹) *</label>
+                                <input id="selling_price" name="selling_price" type="number" min="0" step="0.01" required>
+                            </div>
+                            <div class="field">
+                                <label for="expiry_date">Expiry Date *</label>
+                                <input id="expiry_date" name="expiry_date" type="date" min="{{ today }}" required>
+                            </div>
+                        </div>
+                        <div class="form-footer">
+                            <span class="help-text">Fields marked * are required.</span>
+                            <button type="submit" class="button button-primary">Save Batch</button>
+                        </div>
+                    </form>
+                </article>
+                {% endif %}
+
+                <article class="panel">
+                    <div class="panel-heading">
+                        <h3>Product Stock and Batches</h3>
+                        <span class="pill">{{ batches|length }} batches</span>
+                    </div>
+                    <p class="panel-description">
+                        Search or filter the existing inventory. Use the row actions to adjust stock, sell units, or record a movement.
+                    </p>
+
+                    <div class="toolbar">
+                        <input class="control search-control" id="inventorySearch"
+                               type="search" placeholder="Search product, batch or barcode...">
+                        <select class="control" id="inventoryStatus">
+                            <option value="">All statuses</option>
+                            <option>Safe</option><option>Warning</option>
+                            <option>Urgent</option><option>Expires Today</option><option>Expired</option>
+                        </select>
+                        <select class="control" id="inventoryCategory">
+                            <option value="">All categories</option>
+                            {% for category in categories %}<option value="{{ category }}">{{ category }}</option>{% endfor %}
+                        </select>
+                        <select class="control" id="inventorySort" aria-label="Sort inventory">
+                            <option value="expiry-asc">Expiry date: earliest first</option>
+                            <option value="expiry-desc">Expiry date: latest first</option>
+                            <option value="name-asc">Product: A to Z</option>
+                            <option value="name-desc">Product: Z to A</option>
+                            <option value="batch-asc">Batch: A to Z</option>
+                            <option value="batch-desc">Batch: Z to A</option>
+                            <option value="quantity-desc">Quantity: high to low</option>
+                            <option value="quantity-asc">Quantity: low to high</option>
+                            <option value="purchase-asc">Purchase price: low to high</option>
+                            <option value="purchase-desc">Purchase price: high to low</option>
+                            <option value="selling-asc">Selling price: low to high</option>
+                            <option value="selling-desc">Selling price: high to low</option>
+                            <option value="days-asc">Days remaining: low to high</option>
+                            <option value="days-desc">Days remaining: high to low</option>
+                            <option value="status-asc">Status: A to Z</option>
+                            <option value="status-desc">Status: Z to A</option>
+                        </select>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>Product</th><th>Batch</th><th>Barcode</th>
+                                <th>Qty</th><th>Purchase</th><th>Selling</th>
+                                <th>Expiry</th><th>Days left</th><th>Status</th>
+                                <th>Stock value</th><th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody id="inventoryRows">
+                            {% for b in batches %}
+                                <tr class="inventory-row"
+                                    data-batch-id="{{ b.id }}"
+                                    data-name="{{ b.product_name|lower }}"
+                                    data-category="{{ b.category }}"
+                                    data-batch="{{ b.batch_number|lower }}"
+                                    data-barcode="{{ (b.barcode or '')|lower }}"
+                                    data-status="{{ b.status }}"
+                                    data-expiry="{{ b.expiry_date }}"
+                                    data-days-left="{{ b.days_left }}"
+                                    data-quantity="{{ b.quantity }}"
+                                    data-purchase="{{ b.purchase_price }}"
+                                    data-selling="{{ b.selling_price }}"
+                                    data-value="{{ b.stock_value }}">
+                                    <td>
+                                        <div class="product-name">{{ b.product_name }}</div>
+                                        <div class="product-category">{{ b.category }}</div>
+                                    </td>
+                                    <td>{{ b.batch_number }}</td>
+                                    <td>{{ b.barcode or '—' }}</td>
+                                    <td><strong>{{ b.quantity }}</strong>
+                                        {% if b.quantity <= 0 %}<div class="product-category" style="color:var(--red);font-weight:700">Stock Not Available</div>{% endif %}
+                                    </td>
+                                    <td>₹{{ "%.2f"|format(b.purchase_price) }}</td>
+                                    <td>₹{{ "%.2f"|format(b.selling_price) }}</td>
+                                    <td>{{ b.expiry_date }}</td>
+                                    <td>
+                                        {% if b.days_left < 0 %}{{ b.days_left|abs }} days ago
+                                        {% elif b.days_left == 0 %}Today
+                                        {% else %}{{ b.days_left }} days{% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="pill {{ 'expired' if b.status == 'Expired' else ('urgent' if b.status in ['Urgent', 'Expires Today'] else ('warning' if b.status == 'Warning' else 'safe')) }}">{{ b.status }}</span>
+                                    </td>
+                                    <td>₹{{ "%.2f"|format(b.stock_value) }}</td>
+                                    <td>
+                                        <div class="actions">
+                                            {% if current_user.role in ['Admin', 'Manager'] %}
+                                            <form class="inline-form"
+                                                  action="{{ url_for('update_stock', batch_id=b.id) }}"
+                                                  method="POST">
+                                                <input name="quantity" type="number" min="0" step="1"
+                                                       value="{{ b.quantity }}" required aria-label="Set stock quantity">
+                                                <button class="button button-outline" type="submit">Update</button>
+                                            </form>
+
+                                            {% endif %}
+                                            <form class="inline-form sale-form"
+                                                  action="{{ url_for('record_sale', batch_id=b.id) }}"
+                                                  method="POST">
+                                                <input name="quantity_sold" type="number" min="1"
+                                                       max="{{ b.quantity }}" step="1" placeholder="Sale qty"
+                                                       required aria-label="Quantity to sell"
+                                                       {% if b.quantity <= 0 or b.days_left <= 0 %}disabled{% endif %}>
+                                                <button class="button button-primary" type="submit"
+                                                        {% if b.fefo_available <= 0 %}disabled{% endif %}>Sell</button>
+                                            </form>
+
+                                            {% if current_user.role in ['Admin', 'Manager'] %}
+                                            <form class="movement-form"
+                                                  action="{{ url_for('add_stock_movement', batch_id=b.id) }}"
+                                                  method="POST">
+                                                <div class="inline-form">
+                                                    <select name="movement_type" required aria-label="Movement type">
+                                                        <option value="PURCHASE">Purchase +</option>
+                                                        <option value="RETURN_IN">Return in +</option>
+                                                        <option value="DAMAGE">Damage −</option>
+                                                        <option value="EXPIRED">Expired −</option>
+                                                        <option value="RETURN_OUT">Return out −</option>
+                                                        <option value="OTHER">Other −</option>
+                                                    </select>
+                                                    <input name="quantity" type="number" min="1" step="1"
+                                                           placeholder="Qty" required aria-label="Movement quantity">
+                                                    <button class="button button-light" type="submit">Record</button>
+                                                </div>
+                                                <input name="note" class="control" style="margin-top:5px"
+                                                       maxlength="250" placeholder="Optional movement note"
+                                                       aria-label="Movement note">
+                                            </form>
+
+                                            {% endif %}
+                                            <a class="button button-outline"
+                                               href="{{ url_for('batch_sales', batch_id=b.id) }}">Sales history →</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr><td colspan="11"><div class="empty-state"><strong>No inventory yet</strong>Add your first batch to get started.</div></td></tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="help-text" id="inventoryCount" style="margin-top:12px"></div>
+                </article>
+
+                <article class="panel">
+                    <div class="panel-heading"><h3>Recent Stock Movements</h3></div>
+                    <p class="panel-description">Latest recorded inventory adjustments.</p>
+                    <div class="table-wrap">
+                        <table style="min-width:650px">
+                            <thead><tr><th>Product</th><th>Batch</th><th>Type</th><th>Change</th><th>Note</th><th>Date</th></tr></thead>
+                            <tbody>
+                            {% for m in movements %}
+                                <tr>
+                                    <td>{{ m.product_name }}</td><td>{{ m.batch_number }}</td>
+                                    <td><span class="pill">{{ m.movement_type }}</span></td>
+                                    <td>{{ '%+d'|format(m.quantity_change) }}</td>
+                                    <td>{{ m.note or '—' }}</td><td>{{ m.created_at }}</td>
+                                </tr>
+                            {% else %}
+                                <tr><td colspan="6"><div class="empty-state">No stock movements recorded yet.</div></td></tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+            </section>
+
+            <!-- ==================================================
+                 PRODUCTS VIEW
+                 ================================================== -->
+            <section class="view" id="view-products" data-title="Products">
+                <div class="view-intro">
+                    <div>
+                        <h2>Products</h2>
+                        <p>Product catalogue grouped from your existing inventory records.</p>
+                    </div>
+                    <a class="button button-primary" href="#inventory" data-navigate="inventory">Manage batches →</a>
+                <a class="button button-light view-back-button" href="#dashboard" data-navigate="dashboard" data-back-dashboard>← Back to Dashboard</a></div>
+
+<div class="cards">
+                    <article class="stat-card">
+                        <div class="stat-top"><span class="stat-label">Unique Products</span><span class="stat-icon">▦</span></div>
+                        <strong class="stat-number">{{ product_names|length }}</strong>
+                        <div class="stat-foot">Distinct product names</div>
+                    </article>
+                    <article class="stat-card">
+                        <div class="stat-top"><span class="stat-label">Total Units</span><span class="stat-icon">📦</span></div>
+                        <strong class="stat-number">{{ summary.total_units }}</strong>
+                        <div class="stat-foot">Across all batches</div>
+                    </article>
+                </div>
+
+                <article class="panel">
+                    <div class="panel-heading"><h3>Product Catalogue</h3></div>
+                    <p class="panel-description">Stock totals are calculated from the existing batch records.</p>
+                    <div class="toolbar" style="grid-template-columns:2fr 1fr">
+                        <input class="control" id="productSearch" type="search" placeholder="Search products...">
+                        <select class="control" id="productCategory">
+                            <option value="">All categories</option>
+                            {% for category in categories %}<option value="{{ category }}">{{ category }}</option>{% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table style="min-width:600px">
+                            <thead><tr><th>Product</th><th>Category</th><th>Batches</th><th>Total units</th><th>Stock value</th><th>Action</th></tr></thead>
+                            <tbody id="productRows">
+                            {% for name in product_names %}
+                                {% set ns = namespace(count=0, qty=0, value=0, category='') %}
+                                {% for b in batches %}
+                                    {% if b.product_name|lower == name|lower %}
+                                        {% set ns.count = ns.count + 1 %}
+                                        {% set ns.qty = ns.qty + b.quantity %}
+                                        {% set ns.value = ns.value + b.stock_value %}
+                                        {% set ns.category = b.category %}
+                                    {% endif %}
+                                {% endfor %}
+                                <tr class="product-row" data-name="{{ name|lower }}" data-category="{{ ns.category }}">
+                                    <td><strong>{{ name }}</strong></td>
+                                    <td>{{ ns.category }}</td>
+                                    <td>{{ ns.count }}</td>
+                                    <td>{{ ns.qty }}</td>
+                                    <td>₹{{ "%.2f"|format(ns.value) }}</td>
+                                    <td><button class="button button-light product-insight-button"
+                                                type="button" data-product="{{ name }}">View insights</button></td>
+                                </tr>
+                            {% else %}
+                                <tr><td colspan="6"><div class="empty-state">No products registered yet.</div></td></tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="productInsightResult" style="margin-top:14px"></div>
+                </article>
+            </section>
+
+            <!-- ==================================================
+                 SALES VIEW
+                 ================================================== -->
+            <section class="view" id="view-sales" data-title="Sales">
+                <div class="view-intro">
+                    <div>
+                        <h2>Sales Management</h2>
+                        <p>Record sales against a specific batch and review batch-level sales history.</p>
+                    </div>
+                    <a class="button button-light view-back-button" href="#dashboard" data-navigate="dashboard" data-back-dashboard>← Back to Dashboard</a>
+                </div>
+
+<div class="cards">
+                    <article class="stat-card">
+                        <div class="stat-top"><span class="stat-label">Average Daily Sales</span><span class="stat-icon">↗</span></div>
+                        <strong class="stat-number">{{ summary.average_daily_sales }}</strong>
+                        <div class="stat-foot">Units per day, last 7 days</div>
+                    </article>
+                    <article class="stat-card">
+                        <div class="stat-top"><span class="stat-label">Stock Available</span><span class="stat-icon">📦</span></div>
+                        <strong class="stat-number">{{ summary.total_units }}</strong>
+                        <div class="stat-foot">Units across all batches</div>
+                    </article>
+                </div>
+
+                <article class="panel">
+                    <div class="panel-heading"><h3>Record a Sale</h3></div>
+                    <p class="panel-description">
+                        Choose a product batch and enter the quantity sold. ExpiryGuard automatically allocates stock from the earliest-expiring eligible batches first (FEFO). Expired batches and batches expiring today are excluded.
+                    </p>
+                    <div class="table-wrap">
+                        <table style="min-width:750px">
+                            <thead><tr><th>Product</th><th>Batch</th><th>Available</th><th>Expiry</th><th>Status</th><th>Record sale</th><th>History</th></tr></thead>
+                            <tbody>
+                            {% for b in batches %}
+                                <tr>
+                                    <td><strong><a href="#inventory" data-navigate="inventory" data-alert-search="{{ b.product_name|e }}" class="alert-open-inventory">{{ b.product_name }}</a></strong><div class="product-category">{{ b.category }}</div></td>
+                                    <td>{{ b.batch_number }}</td>
+                                    <td>{{ b.quantity }}</td>
+                                    <td>{{ b.expiry_date }}</td>
+                                    <td><span class="pill {{ 'expired' if b.status == 'Expired' else ('urgent' if b.status in ['Urgent', 'Expires Today'] else ('warning' if b.status == 'Warning' else 'safe')) }}">{{ b.status }}</span></td>
+                                    <td>
+                                        <form class="inline-form sale-form" action="{{ url_for('record_sale', batch_id=b.id) }}" method="POST">
+                                            <input name="quantity_sold" type="number" min="1" max="{{ b.fefo_available }}" step="1" required placeholder="Qty"
+                                                   {% if b.fefo_available <= 0 %}disabled{% endif %}>
+                                            <button class="button button-primary" type="submit"
+                                                    {% if b.quantity <= 0 or b.days_left <= 0 %}disabled{% endif %}>Sell</button>
+                                        </form>
+                                    </td>
+                                    <td><a class="button button-outline" href="{{ url_for('batch_sales', batch_id=b.id) }}">History</a></td>
+                                </tr>
+                            {% else %}
+                                <tr><td colspan="7"><div class="empty-state">Add inventory before recording sales.</div></td></tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="help-text" style="margin-top:13px">
+                        Sales are allocated across eligible batches in earliest-expiry-first order. Detailed sale history is available per batch.
+                    </p>
+                </article>
+            </section>
+
+            <!-- ==================================================
+                 EXPIRY ALERTS VIEW
+                 ================================================== -->
+            <section class="view" id="view-alerts" data-title="Alerts & Notifications">
+                <div class="view-intro">
+                    <div>
+                        <h2>Alerts &amp; Notifications</h2>
+                        <p>Review expiry, low-stock, overstock and sales signals from existing system data.</p>
+                    </div>
+                <a class="button button-light view-back-button" href="#dashboard" data-navigate="dashboard" data-back-dashboard>← Back to Dashboard</a></div>
+
+<div class="cards">
+                    <article class="stat-card danger">
+                        <div class="stat-top"><span class="stat-label">Expired</span><span class="stat-icon">!</span></div>
+                        <strong class="stat-number">{{ summary.expired }}</strong>
+                        <div class="stat-foot">Expired batches</div>
+                    </article>
+                    <article class="stat-card urgent">
+                        <div class="stat-top"><span class="stat-label">Within 7 Days</span><span class="stat-icon">◷</span></div>
+                        <strong class="stat-number">{{ batches|selectattr('days_left', 'le', 7)|list|length }}</strong>
+                        <div class="stat-foot">Includes expired batches</div>
+                    </article>
+                    <article class="stat-card warning">
+                        <div class="stat-top"><span class="stat-label">Warning</span><span class="stat-icon">⚠</span></div>
+                        <strong class="stat-number">{{ summary.warning }}</strong>
+                        <div class="stat-foot">8–30 days by status rules</div>
+                    </article>
+                    <article class="stat-card">
+                        <div class="stat-top"><span class="stat-label">Expires Today</span><span class="stat-icon">📅</span></div>
+                        <strong class="stat-number">{{ batches|selectattr('status', 'equalto', 'Expires Today')|list|length }}</strong>
+                        <div class="stat-foot">Review immediately</div>
+                    </article>
+                </div>
+
+                <article class="panel">
+                    <div class="panel-heading"><h3>Expiry Calendar Queue</h3></div>
+                    <p class="panel-description">All batches ordered by expiry date, using the existing status calculations.</p>
+                    <div class="table-wrap">
+                        <table style="min-width:700px">
+                            <thead><tr><th>Product</th><th>Batch</th><th>Quantity</th><th>Expiry date</th><th>Time remaining</th><th>Status</th><th>Next step</th></tr></thead>
+                            <tbody>
+                            {% for b in batches if b.days_left <= 30 %}
+                                <tr>
+                                    <td><strong>{{ b.product_name }}</strong><div class="product-category">{{ b.category }}</div></td>
+                                    <td>{{ b.batch_number }}</td>
+                                    <td>{{ b.quantity }}</td>
+                                    <td>{{ b.expiry_date }}</td>
+                                    <td>
+                                        {% if b.days_left < 0 %}{{ b.days_left|abs }} days overdue
+                                        {% elif b.days_left == 0 %}Expires today
+                                        {% else %}{{ b.days_left }} days{% endif %}
+                                    </td>
+                                    <td><span class="pill {{ 'expired' if b.status == 'Expired' else ('urgent' if b.status in ['Urgent', 'Expires Today'] else 'warning') }}">{{ b.status }}</span></td>
+                                    <td>
+                                        {% if b.days_left <= 0 %}Remove from sale and review disposal.
+                                        {% elif b.days_left <= 7 %}Prioritize review; use FEFO where appropriate.
+                                        {% else %}Monitor sales and replenishment.{% endif %}
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr><td colspan="7"><div class="empty-state"><strong>No upcoming expiry alerts</strong>No batches are currently due within 30 days.</div></td></tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+
+                {% if current_user.role in ['Admin', 'Manager'] %}
+                <article class="panel">
+                    <div class="panel-heading"><h3>Stock &amp; Sales Notifications</h3><span class="pill">{{ alerts|length }} total alerts</span></div>
+                    <p class="panel-description">Low-stock, overstock, no-recent-sales and existing recommendation signals. Select an item to open its existing recommendation or inventory view.</p>
+                    {% set operational_alerts = alerts|selectattr('target', 'equalto', 'recommendations')|list %}
+                    {% if operational_alerts %}
+                    <div class="mini-list">
+                        {% for item in operational_alerts %}
+                        <a class="mini-row" href="#recommendations" data-navigate="recommendations">
+                            <div class="mini-info"><div class="mini-title">{{ item.title }} · {{ item.product }}</div><div class="mini-sub">Batch {{ item.batch }} · {{ item.detail }}</div></div>
+                            <span class="pill {{ 'critical' if item.severity == 'critical' else item.severity }}">{{ item.severity|upper }}</span>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}<div class="empty-state"><strong>No operational notifications</strong>No low-stock, overstock or sales signals currently need review.</div>{% endif %}
+                </article>
+                {% endif %}
+            </section>
+
+            <!-- ==================================================
+                 SMART RECOMMENDATIONS VIEW
+                 ================================================== -->
+            {% if current_user.role in ['Admin', 'Manager'] %}
+            <section class="view" id="view-recommendations" data-title="Smart Recommendations">
+                <div class="view-intro">
+                    <div>
+                        <h2>Smart Recommendations</h2>
+                        <p>Actions generated from your actual batch quantities, expiry dates, and recorded sales.</p>
+                    </div>
+                    <a class="button button-light view-back-button" href="#dashboard" data-navigate="dashboard" data-back-dashboard>← Back to Dashboard</a>
+                </div>
+
+<div class="cards">
+                    <article class="stat-card danger">
+                        <div class="stat-top"><span class="stat-label">Critical</span><span class="stat-icon">!</span></div>
+                        <strong class="stat-number">{{ recommendations|selectattr('level', 'equalto', 'critical')|list|length }}</strong>
+                        <div class="stat-foot">Requires immediate review</div>
+                    </article>
+                    <article class="stat-card urgent">
+                        <div class="stat-top"><span class="stat-label">Urgent</span><span class="stat-icon">⚠</span></div>
+                        <strong class="stat-number">{{ recommendations|selectattr('level', 'equalto', 'urgent')|list|length }}</strong>
+                        <div class="stat-foot">High-priority actions</div>
+                    </article>
+                    <article class="stat-card warning">
+                        <div class="stat-top"><span class="stat-label">Warnings</span><span class="stat-icon">◷</span></div>
+                        <strong class="stat-number">{{ recommendations|selectattr('level', 'equalto', 'warning')|list|length }}</strong>
+                        <div class="stat-foot">Review inventory decisions</div>
+                    </article>
+                    <article class="stat-card blue">
+                        <div class="stat-top"><span class="stat-label">Information</span><span class="stat-icon">i</span></div>
+                        <strong class="stat-number">{{ recommendations|selectattr('level', 'equalto', 'info')|list|length }}</strong>
+                        <div class="stat-foot">Stock and demand signals</div>
+                    </article>
+                </div>
+
+                <article class="panel">
+                    <div id="potentialLossFilterNotice" class="help-text hidden" role="status" style="margin-bottom:14px"></div>
+                    <div class="panel-heading">
+                        <h3>Recommended Actions</h3>
+                        <span class="pill">{{ recommendations|length }} recommendations</span>
+                    </div>
+                    <p class="panel-description">
+                        Recommendations below come from your existing Python recommendation engine, not static sample data.
+                    </p>
+
+                    {% if recommendations %}
+                        <div class="cards recommendation-category-cards" id="recommendationCategoryCards">
+                            {% for category in recommendation_categories %}
+                            <button type="button" class="stat-card is-clickable recommendation-category-card" style="font:inherit;color:inherit;text-align:left;cursor:pointer" data-recommendation-category="{{ category|lower }}" aria-pressed="false">
+                                <div class="stat-top"><span class="stat-label">{{ category }} Recommendations</span><span class="stat-icon">{% if category == 'Stock' %}📦{% elif category == 'Expiry' %}⏳{% elif category == 'Loss' %}💰{% elif category == 'Sales' %}🛒{% else %}⚠️{% endif %}</span></div>
+                                <strong class="stat-number">{{ recommendations|selectattr('category', 'equalto', category)|list|length }}</strong>
+                                <div class="stat-foot">View category</div>
+                            </button>
+                            {% endfor %}
+                        </div>
+                        <div class="toolbar recommendation-toolbar">
+                            <input class="control search-control" id="recommendationSearch" type="search" placeholder="Search recommendations..." aria-label="Search recommendations">
+                            <select class="control" id="recommendationCategoryFilter" aria-label="Filter recommendation category">
+                                <option value="">All categories</option>
+                                {% for category in recommendation_categories %}<option value="{{ category|lower }}">{{ category }}</option>{% endfor %}
+                            </select>
+                            <select class="control" id="recommendationPriorityFilter" aria-label="Filter recommendation priority">
+                                <option value="">All priorities</option>
+                                <option value="critical">Critical</option><option value="urgent">Urgent</option><option value="warning">Warning</option><option value="info">Information</option>
+                            </select>
+                            <select class="control" id="recommendationSort" aria-label="Sort recommendations">
+                                <option value="product-asc">Product: A to Z</option><option value="product-desc">Product: Z to A</option>
+                                <option value="quantity-desc">Quantity: high to low</option><option value="quantity-asc">Quantity: low to high</option>
+                                <option value="priority-asc">Priority: high to low</option><option value="priority-desc">Priority: low to high</option>
+                                <option value="date-asc">Days remaining: low to high</option><option value="date-desc">Days remaining: high to low</option>
+                            </select>
+                        </div>
+                        <div id="recommendationResultCount" class="help-text" role="status" style="margin:0 0 12px"></div>
+                        {% for item in recommendations %}
+                            <button type="button" class="recommendation {{ item.level }} recommendation-open" data-recommendation-product="{{ item.product|lower }}" data-recommendation-batch="{{ item.batch|lower }}" data-recommendation-category="{{ item.category|lower }}" data-recommendation-level="{{ item.level }}" data-recommendation-quantity="{{ item.quantity|default(0) }}" data-recommendation-days="{{ item.days_left|default(0) }}" data-recommendation-batch-id="{{ item.batch_id|default('', true) }}" data-recommendation-search="{{ (item.product ~ ' ' ~ item.batch ~ ' ' ~ item.title ~ ' ' ~ item.detail)|lower|e }}" style="display:block;width:100%;text-align:left;cursor:pointer;color:inherit;font:inherit">
+                                <div class="panel-heading">
+                                    <h4>{{ item.title }}</h4>
+                                    <span class="pill {{ 'critical' if item.level == 'critical' else item.level }}">{{ item.level|upper }}</span>
+                                </div>
+                                <div class="product">{{ item.product }} · Batch {{ item.batch }}</div>
+                                <p><strong>Reason:</strong> {{ item.detail }}</p>
+                                <p><strong>Suggested action:</strong> {{ item.action }}</p>
+                                {% if item.stock_value %}
+                                    <p><strong>Estimated stock value involved:</strong> ₹{{ "%.2f"|format(item.stock_value) }}</p>
+                                {% endif %}
+                                <span class="help-text">Click to open this product in Inventory →</span>
+                            </button>
+                        {% endfor %}
+                        <div id="recommendationFilterEmpty" class="empty-state hidden"><strong>No matching recommendations</strong>Try changing the category, priority, or search.</div>
+                    {% else %}
+                        <div class="empty-state"><strong>No recommendations currently available</strong>As stock and sales change, new recommendations may appear.</div>
+                    {% endif %}
+                </article>
+            </section>
+
+            {% endif %}
+
+            {% if current_user.role in ['Admin', 'Manager'] %}
+            <!-- ==================================================
+                 REPORTS VIEW
+                 ================================================== -->
+            <section class="view" id="view-reports" data-title="Reports">
+                <div class="view-intro">
+                    <div>
+                        <h2>Inventory Reports</h2>
+                        <p>Review inventory totals, expiry exposure, and stock value using existing database records.</p>
+                    </div>
+                    <button class="button button-primary" id="printReport" type="button">Print Report</button>
+                <a class="button button-light view-back-button" href="#dashboard" data-navigate="dashboard" data-back-dashboard>← Back to Dashboard</a></div>
+
+<div class="cards">
+                    <article class="stat-card">
+                        <div class="stat-top"><span class="stat-label">Batches</span><span class="stat-icon">▤</span></div>
+                        <strong class="stat-number">{{ summary.total_batches }}</strong>
+                        <div class="stat-foot">Current records</div>
+                    </article>
+                    <article class="stat-card">
+                        <div class="stat-top"><span class="stat-label">Units in Stock</span><span class="stat-icon">📦</span></div>
+                        <strong class="stat-number">{{ summary.total_units }}</strong>
+                        <div class="stat-foot">Available recorded quantity</div>
+                    </article>
+                    <article class="stat-card blue">
+                        <div class="stat-top"><span class="stat-label">Potential Loss</span><span class="stat-icon">₹</span></div>
+                        <strong class="stat-number" style="font-size:21px">₹{{ "%.2f"|format(summary.potential_loss) }}</strong>
+                        <div class="stat-foot">Expiry-risk stock purchase value</div>
+                    </article>
+                    <article class="stat-card warning">
+                        <div class="stat-top"><span class="stat-label">Daily Sales Average</span><span class="stat-icon">↗</span></div>
+                        <strong class="stat-number">{{ summary.average_daily_sales }}</strong>
+                        <div class="stat-foot">Units/day, last 7 days</div>
+                    </article>
+                </div>
+
+                <div class="cards" style="margin-top:16px">
+                    <article class="stat-card"><div class="stat-top"><span class="stat-label">Sales Revenue</span><span class="stat-icon">₹</span></div><strong class="stat-number" style="font-size:21px">₹{{ "%.2f"|format(profit_analytics.revenue) }}</strong><div class="stat-foot">Recorded sales value</div></article>
+                    <article class="stat-card"><div class="stat-top"><span class="stat-label">Cost of Goods Sold</span><span class="stat-icon">📦</span></div><strong class="stat-number" style="font-size:21px">₹{{ "%.2f"|format(profit_analytics.cost_of_goods) }}</strong><div class="stat-foot">Purchase cost of sold units</div></article>
+                    <article class="stat-card {{ 'warning' if profit_analytics.gross_profit < 0 else 'blue' }}"><div class="stat-top"><span class="stat-label">Gross Profit</span><span class="stat-icon">↗</span></div><strong class="stat-number" style="font-size:21px">₹{{ "%.2f"|format(profit_analytics.gross_profit) }}</strong><div class="stat-foot">Revenue minus cost of goods sold</div></article>
+                    <article class="stat-card danger"><div class="stat-top"><span class="stat-label">Expired Stock Cost</span><span class="stat-icon">⚠</span></div><strong class="stat-number" style="font-size:21px">₹{{ "%.2f"|format(profit_analytics.expired_stock_cost) }}</strong><div class="stat-foot">Cost value of remaining expired units</div></article>
+                </div>
+                <article class="panel" style="margin-top:16px">
+                    <div class="panel-heading"><h3>Sales Forecast &amp; Stock-Out Prediction</h3><span class="pill">30-day estimate</span></div>
+                    <p class="panel-description">Demand uses a weighted average of the last 7 days (60%) and last 30 days (40%). Products with seven or fewer days of stock cover are flagged for restocking.</p>
+                    <div class="table-wrap"><table style="min-width:700px"><thead><tr><th>Product</th><th>Stock</th><th>Sold (7 days)</th><th>Sold (30 days)</th><th>Daily Demand</th><th>30-day Forecast</th><th>Stock Cover</th><th>Risk</th></tr></thead><tbody>
+                    {% for f in sales_forecast %}<tr><td><strong>{{ f.product_name }}</strong></td><td>{{ f.stock }}</td><td>{{ f.sold_7 }}</td><td>{{ f.sold_30 }}</td><td>{{ "%.2f"|format(f.daily_demand) }}</td><td>{{ "%.1f"|format(f.forecast_30) }}</td><td>{% if f.days_cover is not none %}{{ f.days_cover }} days{% else %}Not enough sales data{% endif %}</td><td><span class="pill {{ 'urgent' if f.stockout_risk else 'safe' }}">{{ 'Restock soon' if f.stockout_risk else 'Normal' }}</span></td></tr>
+                    {% else %}<tr><td colspan="8"><div class="empty-state">No sales data available for forecasting yet.</div></td></tr>{% endfor %}
+                    </tbody></table></div>
+                    <p class="help-text" style="margin-top:12px">Forecasts are estimates, not guaranteed demand. Older sales use backfilled current batch prices because historical prices were not previously stored.</p>
+                </article>
+
+                <div class="grid-equal">
+                    <article class="panel">
+                        <div class="panel-heading"><h3>Expiry Distribution</h3></div>
+                        <p class="panel-description">Share of recorded batches by current expiry status.</p>
+                        {% for label, value, css in [
+                            ('Safe', summary.safe, 'bar-safe'),
+                            ('Warning', summary.warning, 'bar-warning'),
+                            ('Urgent / Today', summary.urgent, 'bar-urgent'),
+                            ('Expired', summary.expired, 'bar-expired')
+                        ] %}
+                            {% set percentage = (value / summary.total_batches * 100) if summary.total_batches else 0 %}
+                            <div style="margin:17px 0">
+                                <div class="panel-heading">
+                                    <span style="font-size:11px">{{ label }}</span>
+                                    <strong style="font-size:11px">{{ value }} · {{ "%.1f"|format(percentage) }}%</strong>
+                                </div>
+                                <div class="progress-track"><div class="progress-bar {{ css }}" style="width:{{ percentage }}%;background:{{ '#2f9b65' if label == 'Safe' else ('#e6b13f' if label == 'Warning' else ('#ec873e' if label == 'Urgent / Today' else '#d94b57')) }}"></div></div>
+                            </div>
+                        {% endfor %}
+                    </article>
+
+                    <article class="panel">
+                        <div class="panel-heading"><h3>Stock Value by Risk</h3></div>
+                        <p class="panel-description">Purchase value calculated from the existing inventory quantities.</p>
+                        {% set ns = namespace(safe_value=0, warning_value=0, expired_value=0) %}
+                        {% for b in batches %}
+                            {% if b.status == 'Safe' %}
+                                {% set ns.safe_value = ns.safe_value + b.stock_value %}
+                            {% elif b.status == 'Warning' %}
+                                {% set ns.warning_value = ns.warning_value + b.stock_value %}
+                            {% else %}
+                                {% set ns.expired_value = ns.expired_value + b.stock_value %}
+                            {% endif %}
+                        {% endfor %}
+                        <div class="mini-list">
+                            <div class="mini-row"><div class="mini-info"><div class="mini-title">Safe stock</div></div><strong class="mini-number">₹{{ "%.2f"|format(ns.safe_value) }}</strong></div>
+                            <div class="mini-row"><div class="mini-info"><div class="mini-title">Warning stock</div></div><strong class="mini-number">₹{{ "%.2f"|format(ns.warning_value) }}</strong></div>
+                            <div class="mini-row"><div class="mini-info"><div class="mini-title">Urgent / expired stock</div></div><strong class="mini-number">₹{{ "%.2f"|format(ns.expired_value) }}</strong></div>
+                        </div>
+                        <p class="help-text" style="margin-top:13px">These are inventory valuations, not confirmed profits or losses.</p>
+                    </article>
+                </div>
+
+                <article class="panel">
+                    <div class="panel-heading"><h3>Inventory Report</h3></div>
+                    <div class="table-wrap">
+                        <table style="min-width:650px">
+                            <thead><tr><th>Product</th><th>Batch</th><th>Category</th><th>Quantity</th><th>Expiry</th><th>Status</th><th>Purchase value</th></tr></thead>
+                            <tbody>
+                            {% for b in batches %}
+                                <tr>
+                                    <td>{{ b.product_name }}</td><td>{{ b.batch_number }}</td>
+                                    <td>{{ b.category }}</td><td>{{ b.quantity }}</td>
+                                    <td>{{ b.expiry_date }}</td>
+                                    <td><span class="pill {{ 'expired' if b.status == 'Expired' else ('urgent' if b.status in ['Urgent', 'Expires Today'] else ('warning' if b.status == 'Warning' else 'safe')) }}">{{ b.status }}</span></td>
+                                    <td>₹{{ "%.2f"|format(b.stock_value) }}</td>
+                                </tr>
+                            {% else %}
+                                <tr><td colspan="7"><div class="empty-state">No records to report.</div></td></tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+            </section>
+            {% endif %}
+
+            {% if current_user.role == 'Admin' %}
+            <!-- ==================================================
+                 USERS VIEW
+                 ================================================== -->
+            <section class="view" id="view-users" data-title="Users">
+                <div class="view-intro">
+                    <div>
+                        <h2>User Management</h2>
+                        <p>Create accounts, assign roles, update user details and control account status.</p>
+                    </div>
+                    <a class="button button-light view-back-button" href="#dashboard" data-navigate="dashboard" data-back-dashboard>← Back to Dashboard</a>
+                </div>
+
+                <article class="panel">
+                    <div class="panel-heading"><h3>Create User</h3></div>
+                    <p class="panel-description">Only Admins can create accounts. Passwords are stored securely as hashes.</p>
+                    <form action="{{ url_for('create_user') }}" method="POST">
+                        <div class="form-grid">
+                            <div class="field">
+                                <label for="new_username">Username *</label>
+                                <input id="new_username" name="username" required maxlength="50" autocomplete="off">
+                            </div>
+                            <div class="field">
+                                <label for="new_email">Email *</label>
+                                <input id="new_email" name="email" type="email" required maxlength="254" autocomplete="off">
+                            </div>
+                            <div class="field">
+                                <label for="new_password">Temporary Password *</label>
+                                <input id="new_password" name="password" type="password" minlength="8" required autocomplete="new-password">
+                            </div>
+                            <div class="field">
+                                <label for="new_role">Role *</label>
+                                <select id="new_role" name="role" required>
+                                    <option value="Staff">Staff</option>
+                                    <option value="Manager">Manager</option>
+                                    <option value="Admin">Admin</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label for="new_status">Account Status *</label>
+                                <select id="new_status" name="status" required>
+                                    <option value="Active">Active</option>
+                                    <option value="Inactive">Inactive</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-footer">
+                            <span class="help-text">Username and email must be unique. Password must contain at least 8 characters.</span>
+                            <button class="button button-primary" type="submit">＋ Create User</button>
+                        </div>
+                    </form>
+                </article>
+
+                <article class="panel">
+                    <div class="panel-heading">
+                        <h3>Registered Users</h3>
+                        <span class="pill">{{ users|length }} users</span>
+                    </div>
+                    <p class="panel-description">Edit account details and roles, or activate/deactivate accounts. Inactive accounts cannot log in.</p>
+                    {% if users %}
+                    <div class="table-wrap">
+                        <table style="min-width:900px">
+                            <thead><tr><th>Username</th><th>Email</th><th>Role</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
+                            <tbody>
+                            {% for user in users %}
+                                <tr>
+                                    <td><strong>{{ user.username }}</strong>{% if user.id == current_user.id %}<div class="product-category">Your account</div>{% endif %}</td>
+                                    <td>{{ user.email }}</td>
+                                    <td><span class="pill info">{{ user.role }}</span></td>
+                                    <td><span class="pill {{ 'success' if user.status == 'Active' else 'critical' }}">{{ user.status }}</span></td>
+                                    <td>{{ user.created_at }}</td>
+                                    <td>
+                                        <div class="actions">
+                                            <details>
+                                                <summary class="button button-outline" style="cursor:pointer;display:inline-flex">Edit user</summary>
+                                                <form action="{{ url_for('edit_user', user_id=user.id) }}" method="POST" class="panel" style="margin-top:8px;padding:12px;box-shadow:none">
+                                                    <div class="field"><label>Username</label><input name="username" value="{{ user.username }}" required maxlength="50"></div>
+                                                    <div class="field" style="margin-top:8px"><label>Email</label><input name="email" type="email" value="{{ user.email }}" required maxlength="254"></div>
+                                                    <div class="field" style="margin-top:8px"><label>Role</label>
+                                                        <select name="role" {% if user.id == current_user.id %}disabled{% endif %}>
+                                                            <option value="Admin" {% if user.role == 'Admin' %}selected{% endif %}>Admin</option>
+                                                            <option value="Manager" {% if user.role == 'Manager' %}selected{% endif %}>Manager</option>
+                                                            <option value="Staff" {% if user.role == 'Staff' %}selected{% endif %}>Staff</option>
+                                                        </select>
+                                                        {% if user.id == current_user.id %}<input type="hidden" name="role" value="Admin">{% endif %}
+                                                    </div>
+                                                    <div class="field" style="margin-top:8px"><label>New password (optional)</label><input name="password" type="password" minlength="8" autocomplete="new-password" placeholder="Leave blank to keep current password"></div>
+                                                    <button class="button button-primary" type="submit" style="margin-top:10px">Save changes</button>
+                                                </form>
+                                            </details>
+                                            <form action="{{ url_for('update_user_status', user_id=user.id) }}" method="POST">
+                                                {% if user.status == 'Active' %}
+                                                    <input type="hidden" name="status" value="Inactive">
+                                                    <button class="button button-danger" type="submit" {% if user.id == current_user.id %}disabled title="You cannot deactivate your own account"{% endif %}>Deactivate</button>
+                                                {% else %}
+                                                    <input type="hidden" name="status" value="Active">
+                                                    <button class="button button-light" type="submit">Activate</button>
+                                                {% endif %}
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                        <div class="empty-state"><strong>No users found</strong>Create the first user account using the form above.</div>
+                    {% endif %}
+                </article>
+            </section>
+            {% endif %}
+
+            <footer class="page-footer">
+                ExpiryGuard · Inventory and Expiry Management
+            </footer>
+        </div>
+    </main>
+</div>
+
+<script>
+    // =========================================================
+    // VIEW ROUTER
+    // Hash routes support direct links and browser Back/Forward.
+    // Only one module view is visible at any time.
+    // =========================================================
+
+    const currentRole = {{ current_user.role|tojson }};
+    const viewNames = [
+        "dashboard", "inventory", "products", "sales", "alerts",
+        {% if current_user.role in ['Admin', 'Manager'] %}"recommendations", "reports",{% endif %}
+        {% if current_user.role == 'Admin' %}"users",{% endif %}
+    ];
+
+    const viewTitles = {
+        dashboard: "Dashboard",
+        inventory: "Inventory",
+        products: "Products",
+        sales: "Sales",
+        alerts: "Alerts & Notifications",
+        recommendations: "Smart Recommendations",
+        reports: "Reports",
+        users: "Users"
+    };
+
+    function navigateToView(view, replace = false) {
+        if (!viewNames.includes(view)) {
+            view = "dashboard";
+        }
+
+        const newHash = "#" + view;
+
+        if (replace) {
+            history.replaceState(null, "", newHash);
+            renderView(view);
+        } else if (location.hash === newHash) {
+            renderView(view);
+        } else {
+            location.hash = view;
+        }
+    }
+
+    function renderView(view) {
+        if (!viewNames.includes(view)) {
+            view = "dashboard";
+        }
+
+        document.querySelectorAll(".view").forEach(section => {
+            section.classList.toggle(
+                "active",
+                section.id === "view-" + view
+            );
+        });
+
+        document.querySelectorAll(".nav-link[data-view]").forEach(link => {
+            const active = link.dataset.view === view;
+            link.classList.toggle("active", active);
+
+            if (active) {
+                link.setAttribute("aria-current", "page");
+            } else {
+                link.removeAttribute("aria-current");
+            }
+        });
+
+        const heading = document.getElementById("pageHeading");
+        if (heading) heading.textContent = viewTitles[view];
+
+        document.title = "ExpiryGuard | " + viewTitles[view];
+
+        // A new module always starts at the top of the application.
+        window.scrollTo({ top: 0, behavior: "auto" });
+
+        closeMobileMenu();
+    }
+
+    function readRoute() {
+        const requested = location.hash.replace(/^#/, "").trim();
+        renderView(viewNames.includes(requested) ? requested : "dashboard");
+    }
+
+    // Mobile elements and close handler must be initialized BEFORE the first
+    // renderRoute call. Otherwise renderView() can hit the temporal-dead-zone
+    // for `sidebar` and stop the entire script, breaking every button below.
+    const sidebar = document.getElementById("sidebar");
+    const mobileOverlay = document.getElementById("mobileOverlay");
+    const menuButton = document.getElementById("menuButton");
+
+    function closeMobileMenu() {
+        if (sidebar) sidebar.classList.remove("open");
+        if (mobileOverlay) mobileOverlay.classList.remove("open");
+    }
+
+    if (menuButton) {
+        menuButton.addEventListener("click", () => {
+            if (!sidebar || !mobileOverlay) return;
+            sidebar.classList.toggle("open");
+            mobileOverlay.classList.toggle("open");
+        });
+    }
+
+    if (mobileOverlay) mobileOverlay.addEventListener("click", closeMobileMenu);
+
+    window.addEventListener("hashchange", readRoute);
+
+    // Internal navigation links change the route, not page scroll position.
+    document.querySelectorAll("[data-navigate]").forEach(link => {
+        link.addEventListener("click", event => {
+            event.preventDefault();
+            if (link.dataset.navigate === "recommendations") {
+                if (recommendationCategoryFilter) recommendationCategoryFilter.value = "";
+                if (recommendationPriorityFilter) recommendationPriorityFilter.value = "";
+                if (recommendationSearch) recommendationSearch.value = "";
+                filterRecommendations();
+                const notice = document.getElementById("potentialLossFilterNotice");
+                if (notice) notice.classList.add("hidden");
+            }
+            navigateToView(link.dataset.navigate);
+        });
+    });
+
+    document.querySelectorAll(".nav-link[data-view]").forEach(link => {
+        link.addEventListener("click", event => {
+            event.preventDefault();
+            navigateToView(link.dataset.view);
+        });
+    });
+
+    // Open the correct view on first load or refresh.
+    if (!viewNames.includes(location.hash.replace(/^#/, ""))) {
+        history.replaceState(null, "", "#dashboard");
+    }
+    readRoute();
+
+    // =========================================================
+    // ADD-BATCH FORM VISIBILITY
+    // =========================================================
+
+    const addBatchPanel = document.getElementById("addBatchPanel");
+    const toggleAddBatch = document.getElementById("toggleAddBatch");
+
+    if (toggleAddBatch && addBatchPanel) {
+        toggleAddBatch.addEventListener("click", () => {
+            addBatchPanel.classList.toggle("hidden");
+
+            if (!addBatchPanel.classList.contains("hidden")) {
+                addBatchPanel.querySelector("input")?.focus();
+            }
+        });
+    }
+
+    // =========================================================
+    // INVENTORY FILTERING AND SORTING
+    // =========================================================
+
+    const inventoryRows = Array.from(
+        document.querySelectorAll("#inventoryRows .inventory-row")
+    );
+
+    const inventorySearch = document.getElementById("inventorySearch");
+    const inventoryStatus = document.getElementById("inventoryStatus");
+    const inventoryCategory = document.getElementById("inventoryCategory");
+    const inventorySort = document.getElementById("inventorySort");
+    const inventoryBody = document.getElementById("inventoryRows");
+    const inventoryCount = document.getElementById("inventoryCount");
+
+    function filterInventory() {
+        if (!inventorySearch || !inventoryStatus || !inventoryCategory || !inventorySort || !inventoryBody || !inventoryCount) return;
+
+        const search = inventorySearch.value.trim().toLocaleLowerCase();
+        const status = (inventoryStatus.value || "").trim();
+        const category = (inventoryCategory.value || "").trim();
+        const sortValue = inventorySort.value || "expiry-asc";
+        const [sortField, sortDirection = "asc"] = sortValue.split("-");
+
+        // Filter from the original database-rendered rows on every change.
+        // The section status is exact: Warning never includes Urgent/Today.
+        const filtered = inventoryRows.filter(row => {
+            const searchable = [
+                row.dataset.name || "",
+                row.dataset.batch || "",
+                row.dataset.barcode || "",
+                row.dataset.category || "",
+                row.dataset.status || ""
+            ].join(" ").toLocaleLowerCase();
+
+            const matchesSearch = !search || searchable.includes(search);
+            // Compare against the exact status generated by app.py/get_status().
+            // Urgent is intentionally the existing Urgent + Expires Today group.
+            const rowStatus = (row.dataset.status || "").trim();
+            const matchesStatus = !status || (
+                status === "Urgent"
+                    ? (rowStatus === "Urgent" || rowStatus === "Expires Today")
+                    : rowStatus === status
+            );
+            const matchesCategory = !category ||
+                (row.dataset.category || "").trim() === category;
+            return matchesSearch && matchesStatus && matchesCategory;
+        });
+
+        const textFields = new Set(["name", "batch", "status"]);
+        const numericFields = new Set(["quantity", "purchase", "selling", "days", "value"]);
+        filtered.sort((a, b) => {
+            let result = 0;
+            if (textFields.has(sortField)) {
+                const av = (sortField === "status" ? a.dataset.status : a.dataset[sortField]) || "";
+                const bv = (sortField === "status" ? b.dataset.status : b.dataset[sortField]) || "";
+                result = av.localeCompare(bv, undefined, { numeric: true, sensitivity: "base" });
+            } else if (numericFields.has(sortField)) {
+                const datasetField = sortField === "days" ? "daysLeft" : sortField;
+                const av = Number(a.dataset[datasetField] ?? 0);
+                const bv = Number(b.dataset[datasetField] ?? 0);
+                result = av - bv;
+            } else {
+                result = (a.dataset.expiry || "").localeCompare(b.dataset.expiry || "");
+            }
+            return sortDirection === "desc" ? -result : result;
+        });
+
+        // Hide every original row first, then append only the filtered rows in sorted order.
+        inventoryRows.forEach(row => {
+            row.classList.add("hidden");
+            row.setAttribute("aria-hidden", "true");
+        });
+        filtered.forEach(row => {
+            row.classList.remove("hidden");
+            row.removeAttribute("aria-hidden");
+            inventoryBody.appendChild(row);
+        });
+
+        let empty = document.getElementById("inventoryFilterEmpty");
+        if (filtered.length === 0) {
+            if (!empty) {
+                empty = document.createElement("tr");
+                empty.id = "inventoryFilterEmpty";
+                const cell = document.createElement("td");
+                cell.colSpan = 11;
+                cell.className = "empty-state";
+                empty.appendChild(cell);
+            }
+            empty.firstElementChild.textContent = inventoryRows.length
+                ? "No batches match the selected search and filters."
+                : "No batches are registered yet.";
+            inventoryBody.appendChild(empty);
+        } else if (empty) {
+            empty.remove();
+        }
+
+        const activeFilterLabel = status === "Urgent"
+            ? "Urgent / Expires Today"
+            : (status || "All batches");
+        inventoryCount.textContent = `Filter: ${activeFilterLabel} · Showing ${filtered.length} of ${inventoryRows.length} batches`;
+    }
+
+    [inventorySearch, inventoryStatus, inventoryCategory, inventorySort]
+        .forEach(control => control.addEventListener(
+            control.tagName === "INPUT" ? "input" : "change",
+            filterInventory
+        ));
+
+    filterInventory();
+
+    // Recommendation category/search/priority/sort controls operate on the
+    // existing Python-generated recommendation cards only.
+    const recommendationCards = Array.from(document.querySelectorAll(
+        "#view-recommendations .recommendation-open"
+    ));
+    const recommendationSearch = document.getElementById("recommendationSearch");
+    const recommendationCategoryFilter = document.getElementById("recommendationCategoryFilter");
+    const recommendationPriorityFilter = document.getElementById("recommendationPriorityFilter");
+    const recommendationSort = document.getElementById("recommendationSort");
+    const recommendationResultCount = document.getElementById("recommendationResultCount");
+    const recommendationEmpty = document.getElementById("recommendationFilterEmpty");
+    const recommendationPriorityOrder = { critical: 0, urgent: 1, warning: 2, info: 3 };
+
+    function filterRecommendations() {
+        if (!recommendationCards.length) return;
+        const query = (recommendationSearch?.value || "").trim().toLocaleLowerCase();
+        const category = recommendationCategoryFilter?.value || "";
+        const priority = recommendationPriorityFilter?.value || "";
+        const [field, direction = "asc"] = (recommendationSort?.value || "product-asc").split("-");
+        const visible = recommendationCards.filter(card => {
+            const matchesSearch = !query || (card.dataset.recommendationSearch || "").includes(query);
+            const matchesCategory = !category || card.dataset.recommendationCategory === category;
+            const matchesPriority = !priority || card.dataset.recommendationLevel === priority;
+            return matchesSearch && matchesCategory && matchesPriority;
+        });
+        visible.sort((a, b) => {
+            let result = 0;
+            if (field === "product") result = (a.dataset.recommendationProduct || "").localeCompare(b.dataset.recommendationProduct || "", undefined, {numeric:true, sensitivity:"base"});
+            else if (field === "quantity") result = Number(a.dataset.recommendationQuantity || 0) - Number(b.dataset.recommendationQuantity || 0);
+            else if (field === "priority") result = (recommendationPriorityOrder[a.dataset.recommendationLevel] ?? 9) - (recommendationPriorityOrder[b.dataset.recommendationLevel] ?? 9);
+            else result = Number(a.dataset.recommendationDays || 0) - Number(b.dataset.recommendationDays || 0);
+            return direction === "desc" ? -result : result;
+        });
+        recommendationCards.forEach(card => card.classList.add("hidden"));
+        visible.forEach(card => {
+            card.classList.remove("hidden");
+            card.parentNode.appendChild(card);
+        });
+        if (recommendationEmpty) recommendationEmpty.classList.toggle("hidden", visible.length !== 0);
+        if (recommendationResultCount) recommendationResultCount.textContent = `Showing ${visible.length} of ${recommendationCards.length} recommendations`;
+        document.querySelectorAll(".recommendation-category-card").forEach(button => {
+            const active = button.dataset.recommendationCategory === category;
+            button.setAttribute("aria-pressed", String(active));
+            button.classList.toggle("active", active);
+        });
+    }
+
+    [recommendationSearch, recommendationCategoryFilter, recommendationPriorityFilter, recommendationSort]
+        .filter(Boolean).forEach(control => control.addEventListener(
+            control.tagName === "INPUT" ? "input" : "change", filterRecommendations
+        ));
+    document.querySelectorAll(".recommendation-category-card").forEach(button => {
+        button.addEventListener("click", () => {
+            if (recommendationCategoryFilter) {
+                recommendationCategoryFilter.value = button.dataset.recommendationCategory || "";
+                filterRecommendations();
+            }
+        });
+    });
+    recommendationCards.forEach(card => card.addEventListener("click", () => {
+        if (!inventorySearch) return;
+        inventorySearch.value = card.dataset.recommendationProduct || "";
+        if (inventoryStatus) inventoryStatus.value = "";
+        if (inventoryCategory) inventoryCategory.value = "";
+        filterInventory();
+        navigateToView("inventory");
+        const targetBatchId = card.dataset.recommendationBatchId;
+        const targetRow = targetBatchId
+            ? document.querySelector(`#inventoryRows .inventory-row[data-batch-id="${CSS.escape(targetBatchId)}"]`)
+            : null;
+        if (targetRow) targetRow.scrollIntoView({ behavior: "smooth", block: "center" });
+    }));
+    filterRecommendations();
+
+    document.querySelectorAll(".alert-open-inventory[data-alert-search]").forEach(link => {
+        link.addEventListener("click", () => {
+            const term = link.dataset.alertSearch || "";
+            window.setTimeout(() => {
+                if (!inventorySearch) return;
+                inventorySearch.value = term;
+                filterInventory();
+            }, 0);
+        });
+    });
+
+    // Dashboard summary cards reuse the existing Inventory, Sales and
+    // Recommendations views. No duplicate tables or database records are made.
+    function openInventoryFromSummary(status) {
+        inventorySearch.value = "";
+        inventoryCategory.value = "";
+        inventorySort.value = "expiry-asc";
+        inventoryStatus.value = status || "";
+        filterInventory();
+        navigateToView("inventory");
+    }
+
+    function openPotentialLossRecommendations() {
+        const riskStatuses = new Set(["Urgent", "Expires Today", "Expired"]);
+        const riskBatches = new Set(inventoryRows
+            .filter(row => riskStatuses.has(row.dataset.status))
+            .map(row => `${row.dataset.name}|||${row.dataset.batch}`));
+        const cards = Array.from(document.querySelectorAll("#view-recommendations .recommendation"));
+        let visible = 0;
+        cards.forEach(card => {
+            const key = `${card.dataset.recommendationProduct}|||${card.dataset.recommendationBatch}`;
+            const match = riskBatches.has(key);
+            card.classList.toggle("hidden", !match);
+            if (match) visible++;
+        });
+        const heading = document.getElementById("potentialLossFilterNotice");
+        if (heading) {
+            heading.classList.remove("hidden");
+            heading.textContent = `Showing recommendations for batches included in the dashboard's potential-loss estimate (${visible}).`;
+        }
+        navigateToView("recommendations");
+    }
+
+    // Each view keeps only its own relevant summary cards.
+    // Cards are wired once through event delegation; no KPI cards are cloned.
+    function cardActionFor(card) {
+        const label = card.querySelector(".stat-label")?.textContent
+            .trim().toLowerCase().replace(/\s+/g, " ") || "";
+
+        if (label.includes("total batches") || label === "batches") {
+            return { action: "inventory", filter: "", title: "Inventory Management" };
+        }
+        if (label.includes("total units") || label.includes("units in stock")
+            || label.includes("stock available")) {
+            return { action: "products", filter: "", title: "Total Units" };
+        }
+        if (label === "safe" || label.includes("safe batches")) {
+            return { action: "inventory", filter: "Safe", title: "Safe Batches" };
+        }
+        if (label === "warning" || label === "warnings" || label.includes("warning batches")) {
+            return { action: "inventory", filter: "Warning", title: "Warning Batches" };
+        }
+        if (label.includes("urgent") || label.includes("critical")
+            || label.includes("within 7 days")) {
+            return { action: "inventory", filter: "Urgent", title: "Urgent Batches" };
+        }
+        if (label.includes("expires today")) {
+            return { action: "inventory", filter: "Expires Today", title: "Batches Expiring Today" };
+        }
+        if (label.includes("expired")) {
+            return { action: "inventory", filter: "Expired", title: "Expired Batches" };
+        }
+        if (label.includes("potential loss")) {
+            return { action: "potential-loss", filter: "", title: "Potential Expiry Loss" };
+        }
+        if (label.includes("average daily sales") || label.includes("daily sales average")) {
+            return { action: "sales", filter: "", title: "Sales Management" };
+        }
+        if (label.includes("unique products")) {
+            return { action: "products", filter: "", title: "Products" };
+        }
+        if (label.includes("information")) {
+            return { action: "recommendations", filter: "", title: "Smart Recommendations" };
+        }
+        return null;
+    }
+
+    // Apply behavior to all existing stat cards in all views, including cards
+    // already present on Dashboard. This preserves the module-specific card sets.
+    document.querySelectorAll(".view .stat-card").forEach(card => {
+        if (card.dataset.dashboardAction) {
+            card.classList.add("is-clickable");
+            card.setAttribute("role", "link");
+            card.setAttribute("tabindex", "0");
+            return;
+        }
+        const config = cardActionFor(card);
+        if (!config) return;
+        card.dataset.dashboardAction = config.action;
+        card.dataset.inventoryFilter = config.filter;
+        card.dataset.cardTitle = config.title;
+        card.classList.add("is-clickable");
+        card.setAttribute("role", "link");
+        card.setAttribute("tabindex", "0");
+        card.setAttribute("aria-label", "Open " + config.title);
+    });
+
+    function activateDashboardCard(card) {
+        const action = card.dataset.dashboardAction;
+        const filter = card.dataset.inventoryFilter || "";
+
+        if (action === "inventory") {
+            openInventoryFromSummary(filter);
+            const heading = document.querySelector("#view-inventory .view-intro h2");
+            if (heading) heading.textContent = card.dataset.cardTitle
+                || (filter ? filter + " Batches" : "Inventory Management");
+        } else if (action === "products") {
+            navigateToView("products");
+            const heading = document.querySelector("#view-products .view-intro h2");
+            const description = document.querySelector("#view-products .view-intro p");
+            if (heading) heading.textContent = card.dataset.cardTitle || "Total Units";
+            if (description) description.textContent =
+                "Current remaining units grouped by each existing product.";
+        } else if (action === "sales") {
+            navigateToView("sales");
+        } else if (action === "potential-loss") {
+            openPotentialLossRecommendations();
+        } else if (action === "recommendations") {
+            navigateToView("recommendations");
+        }
+    }
+
+    // Delegation means cards continue working after any number of view changes.
+    document.addEventListener("click", event => {
+        const card = event.target.closest(".stat-card[data-dashboard-action]");
+        if (card) {
+            event.preventDefault();
+            activateDashboardCard(card);
+        }
+    });
+
+    document.addEventListener("keydown", event => {
+        const card = event.target.closest(".stat-card[data-dashboard-action]");
+        if (card && (event.key === "Enter" || event.key === " ")) {
+            event.preventDefault();
+            activateDashboardCard(card);
+        }
+    });
+
+    // Every non-dashboard view has exactly one top-right Back to Dashboard link.
+    document.querySelectorAll(".view:not(#view-dashboard)").forEach(view => {
+        const backLinks = view.querySelectorAll("[data-back-dashboard]");
+        backLinks.forEach((link, index) => {
+            if (index > 0) link.remove();
+        });
+    });
+
+    // Global search opens Inventory and applies the search term.
+    document.getElementById("globalSearch").addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+            inventorySearch.value = event.currentTarget.value;
+            filterInventory();
+            navigateToView("inventory");
+        }
+    });
+
+    // =========================================================
+    // PRODUCT FILTERING
+    // =========================================================
+
+    const productSearch = document.getElementById("productSearch");
+    const productCategory = document.getElementById("productCategory");
+    const productRows = Array.from(document.querySelectorAll(".product-row"));
+
+    function filterProducts() {
+        const query = productSearch.value.trim().toLowerCase();
+        const category = productCategory.value;
+
+        productRows.forEach(row => {
+            const visible = row.dataset.name.includes(query)
+                && (!category || row.dataset.category === category);
+            row.classList.toggle("hidden", !visible);
+        });
+    }
+
+    productSearch.addEventListener("input", filterProducts);
+    productCategory.addEventListener("change", filterProducts);
+
+    // =========================================================
+    // PRODUCT INSIGHTS: USE EXISTING BACKEND ENDPOINT
+    // =========================================================
+
+    const insightResult = document.getElementById("productInsightResult");
+
+    function appendSafeText(parent, tag, value) {
+        const element = document.createElement(tag);
+        element.textContent = value;
+        parent.appendChild(element);
+        return element;
+    }
+
+    document.querySelectorAll(".product-insight-button").forEach(button => {
+        button.addEventListener("click", async () => {
+            insightResult.replaceChildren();
+
+            const name = button.dataset.product;
+            appendSafeText(insightResult, "p", "Loading product insights...");
+
+            try {
+                const url = new URL(
+                    "{{ url_for('product_insight') }}",
+                    window.location.origin
+                );
+                url.searchParams.set("name", name);
+
+                const response = await fetch(url);
+                if (!response.ok) throw new Error("Request failed");
+
+                const data = await response.json();
+                insightResult.replaceChildren();
+
+                if (!data.found) {
+                    appendSafeText(insightResult, "p", "No insights found.");
+                    return;
+                }
+
+                const card = document.createElement("div");
+                card.className = "recommendation info";
+                insightResult.appendChild(card);
+
+                appendSafeText(card, "h4", data.product_name);
+                appendSafeText(card, "p", "Total stock: " + data.total_stock);
+                appendSafeText(card, "p", "Sold in last 7 days: " + data.total_sold_7_days);
+                appendSafeText(
+                    card, "p",
+                    "Average daily sales: " +
+                    (data.average_daily_sales ?? "Not available")
+                );
+                appendSafeText(
+                    card, "p",
+                    "Stock cover: " +
+                    (data.stock_cover_days === null
+                        ? "Cannot estimate without sales"
+                        : data.stock_cover_days + " days")
+                );
+                appendSafeText(card, "p", "Advice: " + data.advice);
+            } catch (error) {
+                insightResult.replaceChildren();
+                appendSafeText(
+                    insightResult,
+                    "p",
+                    "Unable to load insights. Please try again."
+                );
+            }
+        });
+    });
+
+    // =========================================================
+    // SALE CONFIRMATION
+    // =========================================================
+
+    document.querySelectorAll(".sale-form").forEach(form => {
+        form.addEventListener("submit", event => {
+            const input = form.querySelector('[name="quantity_sold"]');
+            const quantity = Number(input.value);
+            const max = Number(input.max);
+
+            if (!Number.isInteger(quantity) || quantity < 1 || quantity > max) {
+                event.preventDefault();
+                alert("Enter a valid sale quantity within available stock.");
+                return;
+            }
+
+            if (!confirm(`Record the sale of ${quantity} unit(s)?`)) {
+                event.preventDefault();
+            }
+        });
+    });
+
+    // =========================================================
+    // STOCK MOVEMENT CONFIRMATION
+    // =========================================================
+
+    document.querySelectorAll(".movement-form").forEach(form => {
+        form.addEventListener("submit", event => {
+            const type = form.querySelector('[name="movement_type"]').value;
+            const quantity = Number(form.querySelector('[name="quantity"]').value);
+
+            if (!Number.isInteger(quantity) || quantity <= 0) {
+                event.preventDefault();
+                alert("Enter a valid positive movement quantity.");
+                return;
+            }
+
+            if (!confirm(
+                `Record ${type.replaceAll("_", " ")} for ${quantity} unit(s)?`
+            )) {
+                event.preventDefault();
+            }
+        });
+    });
+
+    // =========================================================
+    // PRINT REPORT
+    // =========================================================
+
+    document.getElementById("printReport").addEventListener("click", () => {
+        window.print();
+    });
+
+    // Hide transient flash notifications after a short delay.
+    window.setTimeout(() => {
+        const flashList = document.getElementById("flashList");
+        if (flashList) {
+            flashList.style.transition = "opacity .35s";
+            flashList.style.opacity = "0";
+            window.setTimeout(() => flashList.remove(), 400);
+        }
+    }, 8000);
+</script>
+</body>
+</html>

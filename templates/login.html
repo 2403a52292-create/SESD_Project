@@ -1,0 +1,1194 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ExpiryGuard | Smart Inventory Management</title>
+
+<style>
+:root {
+    --green: #16845b;
+    --dark: #106443;
+    --light: #e9f7ef;
+    --text: #182b24;
+    --muted: #718078;
+    --border: #e5ebe7;
+    --bg: #f5f8f6;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    color: var(--text);
+    background: white;
+}
+
+/* HEADER */
+
+.header {
+    min-height: 85px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 5.2%;
+    background: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,.08);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--green);
+    font-size: 28px;
+    font-weight: bold;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.logo-icon {
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    background: var(--light);
+    border-radius: 13px;
+    font-size: 26px;
+}
+
+.nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nav button {
+    border: 0;
+    background: transparent;
+    color: #34483d;
+    font-size: 13px;
+    font-weight: bold;
+    padding: 12px 13px;
+    border-radius: 7px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.nav button:hover {
+    color: var(--green);
+    background: var(--light);
+}
+
+.nav .role-btn {
+    background: var(--green);
+    color: white;
+    min-width: 75px;
+}
+
+.nav .role-btn:hover {
+    background: var(--dark);
+    color: white;
+}
+
+/* PAGE NAVIGATION */
+
+.page {
+    display: none;
+    min-height: calc(100vh - 85px);
+}
+
+.page.active {
+    display: block;
+}
+
+/* HOME PAGE */
+
+.home-page {
+    min-height: calc(100vh - 85px);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: 45px;
+    padding: 45px 5.2% 45px 7.2%;
+}
+
+.home-text .tagline {
+    color: var(--green);
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    margin-bottom: 18px;
+}
+
+.home-text h1 {
+    color: #176b45;
+    font-size: clamp(38px, 3.5vw, 55px);
+    line-height: 1.18;
+    margin-bottom: 20px;
+}
+
+.home-text p {
+    max-width: 520px;
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1.8;
+}
+
+/* IMAGE SLIDER */
+
+.slider {
+    width: 100%;
+    height: 390px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
+    box-shadow: 0 12px 35px rgba(0,0,0,.12);
+    background: #e9f0eb;
+}
+
+.slides {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    transition: transform .7s ease;
+}
+
+.slides img {
+    width: 100%;
+    height: 100%;
+    flex: 0 0 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255,255,255,.92);
+    color: var(--green);
+    font-size: 27px;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.arrow:hover {
+    background: var(--green);
+    color: white;
+}
+
+.prev { left: 14px; }
+.next { right: 14px; }
+
+.dots {
+    position: absolute;
+    bottom: 15px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    z-index: 2;
+}
+
+.dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 20px;
+    background: white;
+    cursor: pointer;
+    transition: .3s;
+}
+
+.dot.active {
+    width: 23px;
+    background: var(--green);
+}
+
+/* LOGIN PAGE */
+
+.login-page {
+    min-height: calc(100vh - 85px);
+    background: #176b45;
+    padding: 25px 1.5% 35px;
+    color: white;
+}
+
+.notice-bar {
+    background: #e9f7ef;
+    color: var(--green);
+    padding: 9px 14px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    white-space: nowrap;
+    font-size: 14px;
+}
+
+.login-heading {
+    text-align: center;
+    font-size: 27px;
+    margin: 10px 0 20px;
+}
+
+.login-layout {
+    display: grid;
+    grid-template-columns: 31% 1fr;
+    gap: 25px;
+    align-items: start;
+}
+
+/* LOGIN CARD */
+
+.login-card {
+    background: white;
+    color: var(--text);
+    border-radius: 25px;
+    padding: 25px 22px;
+    box-shadow: 0 3px 8px rgba(0,0,0,.15);
+    margin-top: 5px;
+}
+
+.login-card h2 {
+    text-align: center;
+    font-size: 24px;
+    font-weight: normal;
+    margin-bottom: 25px;
+}
+
+.login-card .login-subtitle {
+    color: var(--muted);
+    font-size: 13px;
+    text-align: center;
+    margin-top: -17px;
+    margin-bottom: 22px;
+}
+
+.field {
+    display: grid;
+    gap: 8px;
+    margin: 17px 0;
+}
+
+.field label {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.field input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d0d9d3;
+    background: #edf3fb;
+    border-radius: 5px;
+    font-size: 14px;
+    outline: none;
+}
+
+.field input:focus {
+    border-color: var(--green);
+}
+
+.login-submit {
+    width: 100%;
+    padding: 13px;
+    border: 0;
+    border-radius: 5px;
+    background: var(--green);
+    color: white;
+    font-size: 15px;
+    cursor: pointer;
+    margin-top: 8px;
+}
+
+.login-submit:hover {
+    background: var(--dark);
+}
+
+.login-error {
+    background: #fff0f1;
+    color: #a32634;
+    border: 1px solid #f4d1d5;
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 13px;
+    margin-bottom: 15px;
+}
+
+/* UPDATES TABLE */
+
+.updates-area {
+    min-width: 0;
+}
+
+.updates-title {
+    text-align: center;
+    font-size: 27px;
+    margin-bottom: 15px;
+}
+
+.updates-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 10px 0 35px;
+    gap: 15px;
+}
+
+.updates-toolbar select,
+.updates-toolbar input {
+    padding: 9px;
+    border: 1px solid #d2ded6;
+    border-radius: 5px;
+}
+
+.updates-toolbar input {
+    width: 220px;
+    border-radius: 25px;
+}
+
+.updates-table-wrap {
+    overflow-x: auto;
+}
+
+.updates-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #edf3fb;
+    color: #294c7e;
+    font-size: 13px;
+}
+
+.updates-table th {
+    background: #dce8f7;
+    color: #244c80;
+    text-align: left;
+    padding: 9px 7px;
+    border: 1px solid white;
+}
+
+.updates-table td {
+    padding: 10px 7px;
+    border: 1px solid white;
+}
+
+.updates-table tbody tr:nth-child(even) {
+    background: #dce8f7;
+}
+
+.updates-table tbody tr:hover {
+    background: #c9dfd1;
+}
+
+/* CONTENT PAGES */
+
+.content-page {
+    background: white;
+    min-height: calc(100vh - 85px);
+    padding: 48px 11%;
+}
+
+.content-page h1 {
+    font-size: 32px;
+    font-weight: 500;
+    margin-bottom: 22px;
+    color: #182b24;
+}
+
+.content-page h2 {
+    font-size: 27px;
+    font-weight: 500;
+    margin: 42px 0 20px;
+    color: #182b24;
+}
+
+.content-page h3 {
+    font-size: 20px;
+    font-weight: 500;
+    margin-bottom: 13px;
+}
+
+.content-page p {
+    font-size: 15px;
+    line-height: 1.8;
+    margin-bottom: 17px;
+    color: #34443b;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+    margin: 22px 0 35px;
+}
+
+.info-card {
+    padding: 24px;
+    border: 1px solid #edf0ed;
+    border-radius: 6px;
+    box-shadow: 0 2px 5px rgba(0,0,0,.05);
+    background: white;
+}
+
+.info-card h3 {
+    color: var(--green);
+}
+
+.info-card p {
+    font-size: 14px;
+    margin-bottom: 0;
+}
+
+.contact-details {
+    margin-top: 25px;
+    padding: 25px;
+    background: #f5f8f6;
+    border-left: 4px solid var(--green);
+}
+
+.legal-block {
+    padding: 20px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.legal-block h2 {
+    margin: 15px 0;
+    font-size: 23px;
+}
+
+/* RESPONSIVE */
+
+@media(max-width: 1050px) {
+    .header {
+        height: auto;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 14px 4%;
+    }
+
+    .nav {
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+
+    .home-page {
+        grid-template-columns: 1fr;
+    }
+
+    .login-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .login-card {
+        max-width: 520px;
+        width: 100%;
+        margin: 0 auto 20px;
+    }
+
+    .updates-toolbar {
+        margin-bottom: 20px;
+    }
+}
+
+@media(max-width: 650px) {
+    .logo {
+        font-size: 23px;
+    }
+
+    .nav button {
+        font-size: 11px;
+        padding: 9px;
+    }
+
+    .home-page {
+        padding: 35px 5%;
+    }
+
+    .slider {
+        height: 250px;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .content-page {
+        padding: 35px 6%;
+    }
+
+    .login-page {
+        padding: 18px 4%;
+    }
+
+    .updates-toolbar {
+        flex-wrap: wrap;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<!-- HEADER -->
+
+<header class="header">
+
+    <a href="#" class="logo" onclick="showPage('home'); return false;">
+        <span class="logo-icon">🌿</span>
+        ExpiryGuard
+    </a>
+
+    <nav class="nav">
+        <button class="role-btn" onclick="showLogin('Staff')">STAFF</button>
+        <button class="role-btn" onclick="showLogin('HR')">HR</button>
+        <button class="role-btn" onclick="showLogin('Admin')">ADMIN</button>
+
+        <button onclick="showPage('about')">ABOUT US</button>
+        <button onclick="showPage('contact')">CONTACT US</button>
+        <button onclick="showPage('legal')">LEGAL</button>
+    </nav>
+
+</header>
+
+
+<!-- HOME PAGE -->
+
+<section id="homePage" class="page active">
+
+    <main class="home-page">
+
+        <div class="home-text">
+
+            <div class="tagline">SMART INVENTORY MANAGEMENT</div>
+
+            <h1>
+                Manage Inventory.<br>
+                Prevent Expiry.
+            </h1>
+
+            <p>
+                ExpiryGuard is an intelligent inventory management
+                system designed to monitor product expiry dates,
+                manage stock, track sales and help businesses
+                reduce product wastage.
+            </p>
+
+        </div>
+
+        <!-- IMAGE SLIDER -->
+
+        <div class="slider">
+
+            <div class="slides" id="slides">
+
+                <img
+                    src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1400&q=85"
+                    alt="Supermarket shelves">
+
+                <img
+                    src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1400&q=85"
+                    alt="Warehouse inventory">
+
+               <img
+    src="https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=1400&q=85"
+    alt="Grocery store shelves">
+
+                <img
+                    src="https://images.unsplash.com/photo-1534723452862-4c874018d66d?auto=format&fit=crop&w=1400&q=85"
+                    alt="Retail inventory">
+
+            </div>
+
+            <button class="arrow prev" onclick="moveSlide(-1)">‹</button>
+            <button class="arrow next" onclick="moveSlide(1)">›</button>
+
+            <div class="dots">
+                <span class="dot active" onclick="showSlide(0)"></span>
+                <span class="dot" onclick="showSlide(1)"></span>
+                <span class="dot" onclick="showSlide(2)"></span>
+                <span class="dot" onclick="showSlide(3)"></span>
+            </div>
+
+        </div>
+
+    </main>
+
+</section>
+
+
+<!-- LOGIN PAGE -->
+
+<section id="loginPage" class="page">
+
+    <main class="login-page">
+
+        <div class="notice-bar">
+            Welcome to ExpiryGuard – Smart Inventory Management and Expiry Monitoring System.
+        </div>
+
+        <h2 class="login-heading" id="loginHeading">
+            Staff Login / Inventory Updates
+        </h2>
+
+        <div class="login-layout">
+
+            <!-- LOGIN FORM -->
+
+            <div class="login-card">
+
+                <h2 id="loginCardTitle">Staff Login</h2>
+
+                <p class="login-subtitle">
+                    Enter your authorized account details
+                </p>
+
+                {% if error %}
+                <div class="login-error">{{ error }}</div>
+                {% endif %}
+
+                <form method="POST"
+                      id="loginForm"
+                      action="{{ url_for('login') }}"
+                      autocomplete="on">
+
+                    <div class="field">
+                        <label for="identity">Username or email</label>
+                        <input
+                            type="text"
+                            id="identity"
+                            name="identity"
+                            required
+                            autocomplete="username">
+                    </div>
+
+                    <div class="field">
+                        <label for="password">Password</label>
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            required
+                            autocomplete="current-password">
+                    </div>
+
+                    <button class="login-submit" type="submit">
+                        Sign in
+                    </button>
+
+                </form>
+
+            </div>
+
+
+            <!-- UPDATES TABLE -->
+
+            <div class="updates-area">
+
+                <h2 class="updates-title">ExpiryGuard Updates</h2>
+
+                <div class="updates-toolbar">
+
+                    <select id="rowCount" onchange="filterUpdates()">
+                        <option value="5">5</option>
+                        <option value="10" selected>10</option>
+                        <option value="15">15</option>
+                    </select>
+
+                    <input
+                        type="search"
+                        id="updateSearch"
+                        placeholder="Search updates..."
+                        oninput="filterUpdates()">
+
+                </div>
+
+                <div class="updates-table-wrap">
+
+                    <table class="updates-table">
+
+                        <thead>
+                            <tr>
+                                <th>S.No</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="updatesBody">
+
+                            <tr>
+                                <td>1</td>
+                                <td>Inventory</td>
+                                <td>Monitor product batches and available stock.</td>
+                            </tr>
+
+                            <tr>
+                                <td>2</td>
+                                <td>Expiry</td>
+                                <td>Identify products approaching their expiry dates.</td>
+                            </tr>
+
+                            <tr>
+                                <td>3</td>
+                                <td>Alerts</td>
+                                <td>Review urgent and expired inventory items.</td>
+                            </tr>
+
+                            <tr>
+                                <td>4</td>
+                                <td>Stock</td>
+                                <td>Update product quantities after stock changes.</td>
+                            </tr>
+
+                            <tr>
+                                <td>5</td>
+                                <td>Sales</td>
+                                <td>Record sales and maintain transaction details.</td>
+                            </tr>
+
+                            <tr>
+                                <td>6</td>
+                                <td>Reports</td>
+                                <td>Review inventory status and potential stock loss.</td>
+                            </tr>
+
+                            <tr>
+                                <td>7</td>
+                                <td>Products</td>
+                                <td>Maintain product categories and batch information.</td>
+                            </tr>
+
+                            <tr>
+                                <td>8</td>
+                                <td>Suppliers</td>
+                                <td>Maintain supplier information and records.</td>
+                            </tr>
+
+                            <tr>
+                                <td>9</td>
+                                <td>Management</td>
+                                <td>Use role-based access for authorized operations.</td>
+                            </tr>
+
+                            <tr>
+                                <td>10</td>
+                                <td>System</td>
+                                <td>Use ExpiryGuard to support efficient inventory management.</td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+</section>
+
+
+<!-- ABOUT US -->
+
+<section id="aboutPage" class="page">
+
+    <main class="content-page">
+
+        <h1>About Us</h1>
+
+        <p>
+            ExpiryGuard is a smart inventory management system
+            designed to help businesses manage products, monitor
+            expiry dates and maintain accurate stock information.
+        </p>
+
+        <p>
+            The system brings inventory tracking, expiry monitoring,
+            sales recording and stock management together in one
+            organized platform.
+        </p>
+
+        <p>
+            Our goal is to help businesses reduce product wastage,
+            improve inventory visibility and make better stock
+            management decisions.
+        </p>
+
+        <h2>Platform Overview</h2>
+
+        <div class="info-grid">
+
+            <div class="info-card">
+                <h3>Administrator</h3>
+                <p>
+                    Manages system access, oversees inventory
+                    operations and monitors overall system activity.
+                </p>
+            </div>
+
+            <div class="info-card">
+                <h3>HR</h3>
+                <p>
+                    Supports authorized staff administration
+                    and related organizational activities.
+                </p>
+            </div>
+
+            <div class="info-card">
+                <h3>Staff</h3>
+                <p>
+                    Handles permitted day-to-day inventory,
+                    stock and sales activities.
+                </p>
+            </div>
+
+        </div>
+
+        <h2>Key Differentiators</h2>
+
+        <p>
+            <strong>Expiry Monitoring:</strong>
+            Helps identify products that are approaching expiry
+            or have already expired.
+        </p>
+
+        <p>
+            <strong>Inventory Visibility:</strong>
+            Provides organized product and batch information
+            to support stock management.
+        </p>
+
+        <p>
+            <strong>Sales Management:</strong>
+            Supports sales recording and inventory updates.
+        </p>
+
+        <p>
+            <strong>Inventory Insights:</strong>
+            Helps users understand expiry risks and potential
+            stock losses.
+        </p>
+
+        <p>
+            <strong>Role-Based Access:</strong>
+            Organizes system access according to assigned
+            user permissions.
+        </p>
+
+        <h2>Our Objective</h2>
+
+        <p>
+            ExpiryGuard aims to support more efficient inventory
+            operations by improving product tracking, reducing
+            avoidable wastage and making stock information easier
+            to manage.
+        </p>
+
+    </main>
+
+</section>
+
+
+<!-- CONTACT US -->
+
+<section id="contactPage" class="page">
+
+    <main class="content-page">
+
+        <h1>Contact Us</h1>
+
+        <p>
+            We are here to help with questions related to
+            ExpiryGuard and its inventory management features.
+        </p>
+
+        <h2>How Can We Help?</h2>
+
+        <div class="info-grid">
+
+            <div class="info-card">
+                <h3>Login Assistance</h3>
+                <p>
+                    Contact your authorized administrator
+                    if you have trouble accessing your account.
+                </p>
+            </div>
+
+            <div class="info-card">
+                <h3>Inventory Support</h3>
+                <p>
+                    Get assistance with product details,
+                    batch information and stock operations.
+                </p>
+            </div>
+
+            <div class="info-card">
+                <h3>Technical Support</h3>
+                <p>
+                    Report system issues to the designated
+                    ExpiryGuard support administrator.
+                </p>
+            </div>
+
+        </div>
+
+        <h2>Support Information</h2>
+
+        <div class="contact-details">
+
+            <h3>ExpiryGuard Support</h3>
+
+            <p>
+                For account access, technical assistance or
+                inventory-related queries, please contact
+                your system administrator.
+            </p>
+
+            <p>
+                ExpiryGuard – Smart Inventory Management System
+            </p>
+
+        </div>
+
+    </main>
+
+</section>
+
+
+<!-- LEGAL: TERMS AND PRIVACY POLICY -->
+
+<section id="legalPage" class="page">
+
+    <main class="content-page">
+
+        <h1>Terms & Conditions and Privacy Policy</h1>
+
+        <div class="legal-block">
+
+            <h2>Terms & Conditions</h2>
+
+            <p>
+                By accessing ExpiryGuard, users agree to use
+                the system for its intended inventory management
+                purposes and follow the rules established by
+                the organization operating the system.
+            </p>
+
+            <p>
+                Users must access the platform using authorized
+                login credentials. Sharing account credentials
+                or attempting to access information without
+                permission is not permitted.
+            </p>
+
+            <p>
+                Users are responsible for entering accurate
+                product, batch, stock and sales information.
+                Inventory records should be updated whenever
+                authorized stock operations take place.
+            </p>
+
+            <p>
+                Access to system features is controlled by
+                assigned user roles and permissions.
+            </p>
+
+        </div>
+
+        <div class="legal-block">
+
+            <h2>Privacy Policy</h2>
+
+            <p>
+                ExpiryGuard uses account and inventory information
+                to provide its inventory management functionality.
+            </p>
+
+            <p>
+                System information should only be accessed by
+                authorized users for legitimate operational
+                purposes.
+            </p>
+
+            <p>
+                Users are responsible for keeping their login
+                credentials confidential and protecting access
+                to their accounts.
+            </p>
+
+            <p>
+                Information should be handled responsibly
+                according to the organization's applicable
+                privacy and data protection requirements.
+            </p>
+
+        </div>
+
+    </main>
+
+</section>
+
+
+<script>
+
+/* PAGE NAVIGATION */
+
+const pages = [
+    "homePage",
+    "loginPage",
+    "aboutPage",
+    "contactPage",
+    "legalPage"
+];
+
+function showPage(pageName) {
+
+    pages.forEach(id => {
+        document.getElementById(id).classList.remove("active");
+    });
+
+    document.getElementById(pageName + "Page").classList.add("active");
+
+    window.scrollTo(0, 0);
+}
+
+
+/* ROLE LOGIN */
+
+function showLogin(role) {
+
+    showPage("login");
+
+    document.getElementById("loginCardTitle").textContent =
+        role + " Login";
+
+    document.getElementById("loginHeading").textContent =
+        role + " Login / Inventory Updates";
+
+    document.getElementById("loginForm").action =
+        "{{ url_for('login') }}" + "?role=" + encodeURIComponent(role);
+
+}
+
+
+/* IMAGE SLIDER */
+
+let currentSlide = 0;
+
+const slides = document.getElementById("slides");
+const slideImages = slides.querySelectorAll("img");
+const dots = document.querySelectorAll(".dot");
+const totalSlides = slideImages.length;
+
+function showSlide(index) {
+
+    currentSlide = (index + totalSlides) % totalSlides;
+
+    slides.style.transform =
+        "translateX(-" + (currentSlide * 100) + "%)";
+
+    dots.forEach((dot, i) => {
+        dot.classList.toggle("active", i === currentSlide);
+    });
+
+}
+
+function moveSlide(direction) {
+    showSlide(currentSlide + direction);
+}
+
+
+/* AUTOMATIC SLIDING */
+
+let sliderTimer = setInterval(function() {
+    moveSlide(1);
+}, 3500);
+
+
+/* RESET TIMER AFTER MANUAL SLIDING */
+
+document.querySelectorAll(".arrow, .dot").forEach(control => {
+
+    control.addEventListener("click", function() {
+
+        clearInterval(sliderTimer);
+
+        sliderTimer = setInterval(function() {
+            moveSlide(1);
+        }, 3500);
+
+    });
+
+});
+
+
+/* UPDATE TABLE SEARCH AND ROW COUNT */
+
+function filterUpdates() {
+
+    const search = document
+        .getElementById("updateSearch")
+        .value.toLowerCase();
+
+    const rowCount = parseInt(
+        document.getElementById("rowCount").value
+    );
+
+    const rows = document.querySelectorAll("#updatesBody tr");
+
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+
+        const matches =
+            row.textContent.toLowerCase().includes(search);
+
+        if (matches && visibleCount < rowCount) {
+            row.style.display = "";
+            visibleCount++;
+        } else {
+            row.style.display = "none";
+        }
+
+    });
+
+}
+
+
+/* SHOW SELECTED ROLE AFTER LOGIN ERROR */
+
+if (document.querySelector(".login-error")) {
+
+    const params = new URLSearchParams(window.location.search);
+
+    const selectedRole = params.get("role") || "Staff";
+
+    const allowedRoles = ["Staff", "HR", "Admin"];
+
+    const role = allowedRoles.includes(selectedRole)
+        ? selectedRole
+        : "Staff";
+
+    showLogin(role);
+
+}
+
+</script>
+
+</body>
+</html>
